@@ -6,10 +6,11 @@ and interpreter-invocation observations. Consumers own lint policy and
 presentation. Grammar and syntax remain owned by the selected Go implementation
 and its faithful `sh-ast` binding.
 
-The extraction is a development candidate. The reserved `0.0.0-stage` version is
-deliberately rejected by the release workflow. The required `sh-ast ^0.11.0`
-binding must be released before this candidate is registry-installable; local
-prospective package artifacts are integration evidence only.
+Source metadata prepares the first stable `0.1.0` release. Publication remains an
+owner action through the manual release workflow, which rejects placeholder and
+prerelease versions. The required `sh-ast ^0.11.0` binding must be released and
+the registry lockfile refreshed before this candidate is registry-installable;
+local prospective package artifacts are integration evidence only.
 
 ```ts
 import { parseSync } from "sh-ast";
