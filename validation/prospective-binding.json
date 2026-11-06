@@ -1,0 +1,39 @@
+{
+  "purpose": "Prospective local composition only; not a published sh-ast release or registry-installability claim",
+  "sourceHead": "76b2dac71080fe53db8c312cdafa84af50451b77",
+  "selectedForkRevision": "bbc7c4ace575d5de375726fdaa2a5c001c46564c",
+  "canonicalArtifactCommit": "21195218aeea9343988ef6f365921bb49c25b682",
+  "canonicalBuildRun": "https://github.com/mike-north/sh-ast/actions/runs/42165152448",
+  "canonicalWasmSha256": "57c46bac7d59913a585a6bd3b7d7e489fa310bd044f13cc2ca1ee012e270ba94",
+  "sourcePackageVersion": "0.10.0",
+  "prospectiveLocalVersion": "0.11.0",
+  "prospectiveTarballSha256": "0fb24b570aa5fc6fa8d1d6c9957640485c0f04db3731c7359c05860b9b41637d",
+  "sourceTarballSha256": "9f72e0e0e81c5f9b9f632104dd759a9a812e8004f003c1cc9722ead3931628ed",
+  "independentlyComparedAssets": {
+    "changedPaths": ["package/package.json"],
+    "onlyMetadataDifference": "package.json.version 0.10.0 -> 0.11.0",
+    "allNonManifestPackagedAssetsIdentical": true,
+    "installedWasmHashMatchesCanonical": true
+  },
+  "validation": {
+    "nodeVersions": ["22.22.1", "24.14.0"],
+    "pnpmVersion": "11.12.0",
+    "bashOracleVersion": "5.3.9",
+    "build": "passed",
+    "strictSourceAndTestTypes": "passed",
+    "format": "passed",
+    "contractTests": {
+      "passed": 7,
+      "failed": 0
+    },
+    "analysisRuntimeTests": {
+      "passed": 731,
+      "failed": 0
+    },
+    "declarationTests": "tsd passed",
+    "installedTarballColdProcess": "passed"
+  },
+  "localCommandNote": "Prospective binding tarball installed temporarily. pnpm_config_verify_deps_before_run=false prevents automatic registry reinstall while running build/check/test against that exact artifact; it is not committed as package-manager policy. The declared dependency stays ^0.11.0.",
+  "releaseGate": "Actual sh-ast 0.11 registry release and ordinary lockfile refresh required; draft CI is intentionally blocked until then",
+  "publication": "No npm publish or OIDC token exchange performed"
+}
