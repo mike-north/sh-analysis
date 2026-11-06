@@ -39,3 +39,17 @@ Signs an implementation has strayed, each a reason to stop and move the work:
 - toolsmith code that decides what to do with a command an agent is about to run.
 
 When a needed capability sits in another layer and does not exist yet, add it there (or record the gap in that repository) rather than approximating it here.
+
+## Clarification (2026-11-06, lead of leads)
+
+The prohibition on TypeScript lexing, tokenizing and heredoc handling targets reimplementing
+grammar: scanning source text to decide where tokens, words or heredoc bodies begin and end.
+A guard that derives every position from sh-ast nodes (for example, checking that the text at
+the end of a `Redirect.Hdoc` range is the redirect's delimiter before shortening an edit) is
+consumption of the binding, not reimplementation, and is allowed. When such a guard exists
+only because the binding's positions are imprecise, that imprecision is a sh-ast (or Go fork)
+defect to report and fix upstream, so the guard can eventually be deleted.
+
+Command and dependency harvesting (enumerating command sites, argv0, wrappers, what a script
+invokes) is sh-analysis's responsibility. Design documents in eslint-sh that assign it to
+`ast-services` predate the split; they describe extraction debt, not a competing boundary.

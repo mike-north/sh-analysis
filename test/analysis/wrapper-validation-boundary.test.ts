@@ -25,6 +25,7 @@ function site(source = "other task"): CommandSite {
 /** JavaScript callers can bypass static types; the one cast intentionally exercises that raw boundary. */
 function rawTable(table: unknown, source?: string): Argv0Resolution {
   return resolveArgv0(site(source), {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Deliberately malformed JavaScript input must reach runtime validation despite the stricter public TypeScript contract.
     transparentWrappers: table as readonly WrapperSpec[],
   });
 }

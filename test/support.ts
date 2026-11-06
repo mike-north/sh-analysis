@@ -8,6 +8,7 @@ interface IWorkflowStep {
   readonly if: unknown;
   readonly run: string | undefined;
   readonly with: Record<string, unknown>;
+  readonly env: Record<string, unknown>;
   readonly "continue-on-error": unknown;
 }
 
@@ -17,7 +18,7 @@ interface IWorkflowJob extends Record<string, unknown> {
 }
 
 /** Release tests inspect event, permission, and job boundaries independently of GitHub execution. */
-interface IWorkflow {
+export interface IWorkflow {
   readonly on: Record<string, unknown>;
   readonly permissions: unknown;
   readonly jobs: Record<string, IWorkflowJob>;
@@ -58,6 +59,7 @@ export function workflow(source: string): IWorkflow {
         if: step.if,
         run: step.run,
         with: step.with === undefined ? {} : object(step.with),
+        env: step.env === undefined ? {} : object(step.env),
         "continue-on-error": step["continue-on-error"],
       };
     });

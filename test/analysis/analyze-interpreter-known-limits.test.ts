@@ -50,6 +50,7 @@ describe("bounded interpreter fixes", () => {
       [field]: ["-c"],
     };
     expect(() =>
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Deliberately malformed JavaScript input must reach runtime validation despite the stricter public TypeScript contract.
       resolve("bash -c x", { embeddedCommandInterpreters: [entry as never] }),
     ).toThrow(ShAnalyzeInvalidWrapperSpecError);
   });
@@ -58,6 +59,7 @@ describe("bounded interpreter fixes", () => {
     "rejects a non-array table: %j",
     (table) => {
       expect(() =>
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Deliberately malformed JavaScript input must reach runtime validation despite the stricter public TypeScript contract.
         resolve("echo x", { embeddedCommandInterpreters: table as never }),
       ).toThrow(ShAnalyzeInvalidWrapperSpecError);
     },

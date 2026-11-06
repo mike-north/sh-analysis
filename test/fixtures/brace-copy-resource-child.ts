@@ -8,26 +8,33 @@ import {
   ShAstError,
 } from "sh-ast";
 import * as analysis from "sh-analysis";
+import type { Word } from "sh-ast";
 
 /** Parser-produced templates retain every field; only the nested expansion Word is replaced. */
-function argument(source) {
+function argument(source: string): Word {
   const command = parseSync(`echo ${source}`).Stmts?.[0]?.Cmd;
-  assert.equal(command?.Type, "CallExpr");
+  assert.ok(command?.Type === "CallExpr");
   assert.ok(command.Args?.[1]);
   return command.Args[1];
 }
 
 /** Snapshot all own keys, scalar values and references without recursively walking the deep graph. */
-function remember(root) {
-  const entries = [];
-  const seen = new Set();
-  const work = [root];
+function remember(root: unknown): () => number {
+  const entries: {
+    value: object;
+    keys: (string | symbol)[];
+    values: unknown[];
+  }[] = [];
+  const seen = new Set<object>();
+  const work: unknown[] = [root];
   while (work.length > 0) {
     const value = work.pop();
     if (!value || typeof value !== "object" || seen.has(value)) continue;
     seen.add(value);
     const keys = Reflect.ownKeys(value);
-    const values = keys.map((key) => value[key]);
+    const values: unknown[] = keys.map((key): unknown =>
+      Reflect.get(value, key),
+    );
     entries.push({ value, keys, values });
     for (const child of values) work.push(child);
   }
@@ -35,7 +42,10 @@ function remember(root) {
     for (const entry of entries) {
       assert.deepEqual(Reflect.ownKeys(entry.value), entry.keys);
       for (let index = 0; index < entry.keys.length; index++) {
-        assert.equal(entry.value[entry.keys[index]], entry.values[index]);
+        assert.equal(
+          Reflect.get(entry.value, entry.keys[index]),
+          entry.values[index],
+        );
       }
     }
     return entries.length;
@@ -43,7 +53,7 @@ function remember(root) {
 }
 
 /** Accept only the observed copy refusal or the binding's exact input-preflight refusal. */
-function refusalStage(failure) {
+function refusalStage(failure: unknown): "analysis-copy" | "binding-input" {
   assert.ok(
     failure,
     "Deep input must refuse rather than return a successful observation",
@@ -60,7 +70,7 @@ function refusalStage(failure) {
   }
   assert.ok(
     failure instanceof ShInternalError,
-    `Unexpected deep-input failure: ${failure.name}: ${failure.message}`,
+    "Unexpected deep-input failure category",
   );
   assert.ok(!(failure instanceof analysis.ShAnalysisError));
   assert.equal(failure.code, "SH_AST_INTERNAL");
@@ -71,8 +81,8 @@ function refusalStage(failure) {
   return "binding-input";
 }
 
-const parameter = argument("${x:-x}").Parts[0];
-assert.equal(parameter.Type, "ParamExp");
+const parameter = argument("${x:-x}").Parts?.[0];
+assert.ok(parameter?.Type === "ParamExp");
 assert.ok(parameter.Exp);
 let nested = argument("x");
 for (let index = 0; index < 2000; index++) {
@@ -81,9 +91,9 @@ for (let index = 0; index < 2000; index++) {
     Parts: [{ ...parameter, Exp: { ...parameter.Exp, Word: nested } }],
   };
 }
-const word = {
+const word: Word = {
   Type: "Word",
-  Parts: [...argument("{a,b}").Parts, ...nested.Parts],
+  Parts: [...(argument("{a,b}").Parts ?? []), ...(nested.Parts ?? [])],
 };
 const unchanged = remember(word);
 assert.throws(
@@ -102,6 +112,10 @@ for (let iteration = 0; iteration < 3; iteration++) {
   // Host clone capacity varies. A completed copy must reach the same typed
   // binding input refusal; a copy stack refusal must retain its own category.
   const stage = refusalStage(failure);
+  assert.ok(
+    failure instanceof analysis.ShAnalyzeResourceError ||
+      failure instanceof ShInternalError,
+  );
   const recordsUnchanged = unchanged();
   const ordinary = parseSync('env A=1 printf "ok"');
   assert.equal(printSync(ordinary), 'env A=1 printf "ok"\n');
@@ -126,9 +140,13 @@ for (let iteration = 0; iteration < 3; iteration++) {
     name: failure.name,
     message: failure.message,
     code: failure.code,
-    operation: failure.operation,
-    cause: failure.cause?.name,
-    causeMessage: failure.cause?.message,
+    operation:
+      failure instanceof analysis.ShAnalyzeResourceError
+        ? failure.operation
+        : undefined,
+    cause: failure.cause instanceof Error ? failure.cause.name : undefined,
+    causeMessage:
+      failure.cause instanceof Error ? failure.cause.message : undefined,
     recordsUnchanged,
     reused: true,
   });

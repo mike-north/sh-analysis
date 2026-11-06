@@ -28,8 +28,10 @@ expectType<"SH_ANALYSIS_MAX_DEPTH">(
   new analysis.ShAnalyzeMaxDepthError(500).code,
 );
 // Parsing remains a separate dependency, rather than a forwarded analysis API.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-call -- tsd must receive this invalid public API call to assert its compile-time rejection.
 expectError(analysis.parseSync("echo x"));
 // The hard break returns a record; callers must explicitly examine its commands and uncertainty.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-call -- tsd must receive this invalid public API call to assert its compile-time rejection.
 expectError(analysis.enumerateCommands(file).map(() => 0));
 // Analysis failure ownership is independent of the binding failure hierarchy.
 expectError(analysis.ShAstError);

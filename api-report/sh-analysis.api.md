@@ -4,6 +4,179 @@
 
 ```ts
 
+import type { CallExpr } from 'sh-ast';
+import type { FlagsArithm } from 'sh-ast';
+import type { GoString } from 'sh-ast';
+import type { Node as Node_2 } from 'sh-ast';
+
+// @public
+export type Argv0ChainWord = WordResolution | Argv0UnresolvedWord;
+
+// @public
+export interface Argv0Resolution {
+    readonly assignmentsSkipped: number;
+    readonly chain: readonly Argv0ChainWord[];
+    readonly chainIndices: readonly number[];
+    readonly effective: Argv0ChainWord;
+}
+
+// @public
+export type Argv0UnresolvedReason = "unknown-flag" | "embedded-command" | "ambiguous-assignment";
+
+// @public
+export interface Argv0UnresolvedWord {
+    // (undocumented)
+    readonly reason: Argv0UnresolvedReason;
+    // (undocumented)
+    readonly static: false;
+}
+
+// @public
+export type CommandContext = {
+    readonly kind: "and";
+    readonly side: "right";
+} | {
+    readonly kind: "or";
+    readonly side: "right";
+} | {
+    readonly kind: "pipeline";
+    readonly stage: number;
+} | {
+    readonly kind: "subshell";
+} | {
+    readonly kind: "cmdSubst";
+} | {
+    readonly kind: "procSubst";
+} | {
+    readonly kind: "if";
+    readonly branch: "then" | "else" | "cond";
+} | {
+    readonly kind: "case";
+} | {
+    readonly kind: "loop";
+    readonly role: "body" | "cond";
+} | {
+    readonly kind: "function";
+    readonly name: GoString;
+} | {
+    readonly kind: "background";
+} | {
+    readonly kind: "negated";
+} | {
+    readonly kind: "coproc";
+};
+
+// @public
+export interface CommandInventory {
+    commands: CommandSite[];
+    uncertainties: CommandUncertainty[];
+}
+
+// @public
+export interface CommandSite {
+    readonly argv: readonly WordResolution[];
+    readonly argv0: WordResolution;
+    readonly context: readonly CommandContext[];
+    readonly node: CallExpr;
+}
+
+// @public
+export interface CommandUncertainty {
+    readonly context: readonly CommandContext[];
+    readonly node: FlagsArithm;
+    readonly reason: "opaque-zsh-subscript";
+}
+
+// @public
+export const DEFAULT_EMBEDDED_COMMAND_INTERPRETERS: readonly EmbeddedCommandInterpreterSpec[];
+
+// @public
+export const DEFAULT_TRANSPARENT_WRAPPERS: readonly WrapperSpec[];
+
+// @public
+export interface EmbeddedCommandInterpreterSpec {
+    readonly names: readonly string[];
+    readonly noOperandLongOptions?: readonly string[];
+    readonly operandAttachment: "separate-word" | "rest-of-cluster";
+    readonly operandLongOptions?: readonly string[];
+    readonly operandOptions: readonly string[];
+    readonly optionalOperandOptions?: readonly string[];
+    readonly optionTerminatorLetters?: readonly string[];
+    readonly optionTerminatorWords?: readonly string[];
+    readonly plusCSelectsCommand?: boolean;
+}
+
+// @public
+export function enumerateCommands(root: Node_2): CommandInventory;
+
+// @public
+export function resolveArgv0(site: CommandSite, options?: ResolveArgv0Options): Argv0Resolution;
+
+// @public
+export interface ResolveArgv0Options {
+    readonly embeddedCommandInterpreters?: readonly EmbeddedCommandInterpreterSpec[];
+    readonly transparentWrappers?: readonly WrapperSpec[];
+}
+
+// @public
+export function resolveWord(word: Node_2, options?: ResolveWordOptions): WordResolution;
+
+// @public
+export interface ResolveWordOptions {
+    readonly context?: "command-argument" | "assignment-value";
+}
+
+// @public
+export abstract class ShAnalysisError extends Error {
+    abstract readonly code: string;
+}
+
+// @public
+export class ShAnalyzeInvalidWrapperSpecError extends ShAnalysisError {
+    constructor(message: string);
+    readonly code = "SH_ANALYSIS_INVALID_WRAPPER_SPEC";
+}
+
+// @public
+export class ShAnalyzeMaxDepthError extends ShAnalysisError {
+    constructor(maxDepth: number);
+    readonly code = "SH_ANALYSIS_MAX_DEPTH";
+    readonly maxDepth: number;
+}
+
+// @public
+export class ShAnalyzeResourceError extends ShAnalysisError {
+    constructor(operation: "brace-observation-copy", cause: RangeError);
+    readonly cause: RangeError;
+    readonly code = "SH_ANALYSIS_RESOURCE";
+    readonly operation: "brace-observation-copy";
+}
+
+// @public
+export type WordResolution = {
+    readonly static: true;
+    readonly text: string;
+} | {
+    readonly static: false;
+    readonly reason: WordResolutionReason;
+};
+
+// @public
+export type WordResolutionReason = "expansion" | "tilde" | "glob" | "brace" | "locale" | "unsupported";
+
+// @public
+export interface WrapperSpec {
+    readonly argFlags?: readonly string[];
+    readonly assignmentOperands?: "shell-identifier" | "env" | "sudo";
+    readonly names: readonly string[];
+    readonly noArgFlagPattern?: RegExp;
+    readonly noArgFlags?: readonly string[];
+    readonly positionalOperandsBeforeCommand?: number;
+    readonly shellBuiltin?: boolean;
+    readonly stopsChainFlags?: readonly string[];
+    readonly unresolvableFlags?: readonly string[];
+}
+
 // (No @packageDocumentation comment for this package)
 
 ```

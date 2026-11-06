@@ -4,9 +4,8 @@
  * not just its own top-level keys — rather than relying on every caller to
  * treat it as read-only by convention.
  *
- * Generic, structural recursion over an unknown shape needs a cast to index
- * into `value`'s own properties; contained to this one small, well-tested
- * utility rather than spread across every table that uses it.
+ * Own property values remain unknown until the object guard establishes that
+ * recursive freezing applies; the helper does not infer a table schema.
  *
  * @internal
  */
@@ -16,7 +15,7 @@ export function deepFreeze<T>(value: T): Readonly<T> {
     (typeof value === "object" || typeof value === "function")
   ) {
     for (const key of Object.getOwnPropertyNames(value)) {
-      const prop = (value as Record<string, unknown>)[key];
+      const prop: unknown = Reflect.get(value, key);
       if (prop !== null && typeof prop === "object") {
         deepFreeze(prop);
       }

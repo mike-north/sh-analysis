@@ -116,8 +116,8 @@ it("retains native clone isolation and aliases during ordinary successful observ
   expect(resolveWord(word)).toEqual({ static: false, reason: "brace" });
   expect(word).toEqual(before);
   expect(word.Parts).toBe(parts);
-  expect(word.Parts?.[1]).toBe(literal);
-  expect(word.Parts?.[2]).toBe(literal);
+  expect(word.Parts[1]).toBe(literal);
+  expect(word.Parts[2]).toBe(literal);
 });
 
 it("constructs the deep fixture with public types and reaches the binding's distinct input refusal", () => {

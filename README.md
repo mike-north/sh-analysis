@@ -52,6 +52,8 @@ an exact prepared stable 0.x version, and npm trusted publishing without an
 environment. The GitHub repository remains private. Ordinary validation has no
 publication permission. No long-lived npm token is used.
 
+## Contributor tooling
+
 Version and changelog preparation uses Changesets. Add a changeset with
 `pnpm exec changeset` for package changes (tooling-only changes need none), then
 run `pnpm version:prepare` and commit the resulting versions and `CHANGELOG.md`
@@ -62,7 +64,7 @@ declares the shape stable; there is no override flag.
 
 TypeScript tooling covers all authored `.ts`, `.tsx`, `.mts`, and `.cts` files,
 including tests and the TypeScript ESLint configuration. ESLint loads its config
-through Jiti; Node runs all release scripts and tests with native type stripping,
+through Jiti; Node runs release scripts and package contract tests with native type stripping,
 explicitly enabled for compatibility with the declared Node 22.14 minimum.
 `tsconfig.json` owns strict type checking for source, scripts, config, and tests;
 `tsconfig.build.json` emits only package sources into `dist/`. Explicit and implicit
@@ -74,7 +76,7 @@ Knip, and dependency consistency. Individual commands are `pnpm check:lint-ts`,
 `pnpm check:api-report`, and `pnpm check:syncpack` (`syncpack lint`). Syncpack checks
 the single package manifest while respecting its existing dependency ranges.
 
-The package has a programmatic entry point even while its exports are empty.
+The public entry point exports the extracted analysis operations, observations, defaults and independent errors.
 [Generated API documentation](docs/api/index.md) and the approved
 [API report](api-report/sh-analysis.api.md) are committed. Run `pnpm build` then
 `pnpm build:docs` after an intentional public API change and review both outputs.

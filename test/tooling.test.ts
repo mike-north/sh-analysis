@@ -241,9 +241,9 @@ void test("release commands execute TypeScript directly without a build or JavaS
     );
     assert.ok(readFileSync(`scripts/check-${name}.ts`, "utf8").length > 0);
   }
-  assert.ok("test" in scripts);
+  assert.ok("test:contracts" in scripts);
   assert.equal(
-    scripts.test,
+    scripts["test:contracts"],
     "node --experimental-strip-types --test test/*.test.ts",
   );
 });

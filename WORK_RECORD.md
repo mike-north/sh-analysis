@@ -181,3 +181,71 @@ Supplemental Node 24.14.0 verification passed both gates and all 13 release test
 Generated documentation uses installed Prettier in build:docs; Extractor reports
 use its schema-supported LF setting. Affected generation/API checks passed after
 this formatting alignment; generated whitespace does not require weaker hooks.
+
+## 2026-11-06: extraction reconciled with strict contributor tooling
+
+Worker scope is extraction-tooling only, starting extraction abdada6 and rebasing
+its twelve commits from shared scaffold 6f84972 onto approved exact tooling head
+3d7514eed58cfa2a74d49e6d96266b0a72e0cefb. Neither extraction/main/origin branches
+nor other worktrees were rewritten. No pushes, GitHub writes, tags, publication,
+main merges, Claude sessions or credential access are authorized or performed.
+The lead retains acceptance. Rebase produced 74695cd5d9b8be18aeb741d1b2dac2a4fabbc840
+before reconciliation changes. Overlaps: package/lock/config in the test commit,
+README and this record in the source commit; release workflow and release tests
+automerged and were inspected and corrected. All historical validation files
+remain byte-identical to abdada6.
+
+Retained all analysis observations and public types, hard breaks, Node22/pnpm11.12,
+exactOptionalPropertyTypes and noEmitOnError. The strict shared config checks
+source/tests/config/scripts; build emits sources only. tsd has its own checking
+context because its negative declarations intentionally fail ordinary tsc.
+Contract tests and both cold-process fixtures are TypeScript, with native type
+stripping and no JavaScript forwarding files. JSON/YAML test receipts are
+validated as unknown at their boundaries. Negative runtime tests retain malformed
+inputs using narrow assertions with specific directive explanations; no unchecked
+any or broad lint exemptions were added. Removed an unsafe structural index cast
+from deepFreeze using Reflect.get with an unknown result. The wrapper default
+ternary remains unchanged: null must fail validation, whereas undefined selects
+defaults. No product API decision or behavior correction was required.
+
+Both inherited Changesets/0.x gates, strict ESLint, syncpack, Knip, API Extractor,
+Documenter, formatting, packaging and tsd checks remain connected. The package
+scripts run all contract tests and 814 analysis tests with Vitest workers=2.
+Corrected the automerged release test to use the checked YAML helper; retained
+manual/OIDC publishing permissions and extraction's disabled release setup cache.
+Generated the API report and Markdown for the actual analysis exports, replacing
+the empty scaffold. The responsibility section, including the lead clarification,
+is copied verbatim from the canonical source path supplied in this session;
+Prettier continues to exclude AGENTS.md.
+
+Tests-first direct red evidence: scratch/reconciliation-red.log records both
+integration outcome failures (JavaScript contract tools and empty API report).
+scratch/package-fixture-red.log separately rejects the embedded JavaScript smoke
+program before moving it to a checked TypeScript fixture. Initial type/lint
+receipts record the merge defects and inherited test assertion issues before fixes.
+Historical analysis red/green receipts above remain inherited evidence, not new
+claims about this reconciled head.
+
+Direct registry query: npm view sh-ast@0.11.0 against registry.npmjs.org returned
+E404; pnpm independently found no matching version. The initial frozen install
+failed on three stale/missing specifiers, which is NOT a registry-resolution test.
+Refreshed every available development dependency honestly. The final ordinary
+lockfile has no local binding path, invented registry integrity or override; frozen
+install now fails ONLY because sh-ast ^0.11.0 remains absent from its importer.
+The manifest range is unchanged. Local checks use the existing prospective
+/tmp/sh-ast-final-checksum-523033-bw_zkyw3/sh-ast-0.11.0.tgz,
+SHA256 8e0f057f91ca6aee91f619c947985d9e29e809abfec82bfae8b487c53c748532.
+Its advertised 0.11.0 metadata is prospective and is not a registry release.
+The local install temporarily used that file dependency; the committed manifest
+was immediately restored and the ordinary lock reconciled without its resolution.
+Commands use pnpm_config_verify_deps_before_run=false only in the local process
+environment, preserving the honest unavailable-registry boundary.
+
+Local Node22.22.1/pnpm11.12 build, complete check, check:changesets and
+check:versions pass. Full validation and final exact head, reproducible commands,
+API review considerations, dependency limitations and remaining acceptance are
+recorded separately in scratch/extraction-tooling-report.md. The generated report
+requires lead review; a local green run does not establish registry installability,
+hosted CI, downstream ESLint composition or release acceptance. No actual publish
+was run. Do not interpret historical Node24 or downstream composition receipts as
+new exact-head evidence.
