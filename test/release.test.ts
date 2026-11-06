@@ -3,7 +3,12 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { assertRelease } from "../scripts/release-contract.ts";
 import test from "node:test";
-import { objects, workflow as readWorkflow } from "./support.ts";
+import {
+  object,
+  objects,
+  workflow as readWorkflow,
+  type IWorkflow,
+} from "./support.ts";
 
 const repository = "mike-north/sh-analysis";
 const approved = {
@@ -90,7 +95,7 @@ await test("workflow is manual-only and scopes OIDC to a GitHub-hosted publicati
   const guardStep = workflow.jobs.publish.steps.find(
     (step) => step.run === "pnpm check:release",
   );
-  assert.equal(guardStep?.env?.RELEASE_VERSION, "${{ inputs.version }}");
+  assert.equal(guardStep?.env.RELEASE_VERSION, "${{ inputs.version }}");
   assert.equal(stepsCacheDisabled(workflow), true);
   const source = readFileSync(".github/workflows/release.yml", "utf8");
   assert.doesNotMatch(source, /NPM_TOKEN|NODE_AUTH_TOKEN|--provenance/);
@@ -151,22 +156,24 @@ await test("release package contains executable and declaration entry points fro
 });
 
 /** Publishing must install from the checked-in lock rather than restored caches. */
-function stepsCacheDisabled(workflow) {
+function stepsCacheDisabled(workflow: IWorkflow) {
   const setup = workflow.jobs.publish.steps.find(
     (step) => step.uses === "actions/setup-node@v4",
   );
   return (
-    setup?.with?.["package-manager-cache"] === false &&
+    setup?.with["package-manager-cache"] === false &&
     setup.with.cache === undefined
   );
 }
 
-test("ordinary validation runs on pull requests without publication authority", () => {
-  const workflow = parse(readFileSync(".github/workflows/check.yml", "utf8"));
+void test("ordinary validation runs on pull requests without publication authority", () => {
+  const workflow = readWorkflow(
+    readFileSync(".github/workflows/check.yml", "utf8"),
+  );
   assert.ok(workflow.on.pull_request);
   assert.deepEqual(workflow.permissions, { contents: "read" });
   for (const job of Object.values(workflow.jobs)) {
-    assert.equal(job.permissions?.["id-token"], undefined);
+    assert.equal(object(job.permissions ?? {})["id-token"], undefined);
     assert.doesNotMatch(JSON.stringify(job), /npm publish/);
   }
   const commands = workflow.jobs.validate.steps

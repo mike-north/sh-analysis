@@ -38,5 +38,6 @@ export function syntheticNode<T extends Exclude<Node["Type"], "TypedNil">>(
                 : null;
   }
   // The generated schema describes this discriminator's complete data contract.
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- The public schema supplies zero fields for synthetic syntax; outcome-bearing fields are explicit test inputs.
   return { ...values, ...fields } as unknown as Extract<Node, { Type: T }>;
 }

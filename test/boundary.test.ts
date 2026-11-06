@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import test from "node:test";
 
-test("analysis consumes only public syntax APIs and owns its errors", async () => {
+void test("analysis consumes only public syntax APIs and owns its errors", async () => {
   for (const filename of readdirSync("src").filter((name) =>
     name.endsWith(".ts"),
   )) {
@@ -22,8 +22,8 @@ test("analysis consumes only public syntax APIs and owns its errors", async () =
   }
   const analysis = await import("../dist/index.js");
   const binding = await import("sh-ast");
-  assert.equal(analysis.parseSync, undefined);
-  assert.equal(analysis.ShAstError, undefined);
+  assert.equal(Reflect.get(analysis, "parseSync"), undefined);
+  assert.equal(Reflect.get(analysis, "ShAstError"), undefined);
   assert.ok(
     new analysis.ShAnalyzeMaxDepthError(500) instanceof
       analysis.ShAnalysisError,

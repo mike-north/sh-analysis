@@ -1510,6 +1510,7 @@ export function resolveArgv0(
   }
   const suppliedWrappers = options?.transparentWrappers;
   const wrappers =
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- JavaScript null must reach container validation rather than select defaults.
     suppliedWrappers === undefined
       ? DEFAULT_TRANSPARENT_WRAPPERS
       : suppliedWrappers;

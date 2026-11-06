@@ -409,7 +409,8 @@ describe("enumerateCommands — criterion 3: completeness backstop (independent 
     return (
       typeof value === "object" &&
       value !== null &&
-      typeof (value as Node).Type === "string"
+      "Type" in value &&
+      typeof value.Type === "string"
     );
   }
 
@@ -670,10 +671,10 @@ describe("enumerateCommands — stack safety: defensive depth guard for genuine 
   it("the thrown error carries the stable SH_ANALYSIS_MAX_DEPTH code", () => {
     expect.assertions(2);
     try {
-      enumerateCommands(syntheticNestedSubshells(501)).commands;
+      enumerateCommands(syntheticNestedSubshells(501));
     } catch (error) {
       expect(error).toBeInstanceOf(ShAnalyzeMaxDepthError);
-      expect((error as ShAnalyzeMaxDepthError).code).toBe(
+      expect(error instanceof ShAnalyzeMaxDepthError && error.code).toBe(
         "SH_ANALYSIS_MAX_DEPTH",
       );
     }

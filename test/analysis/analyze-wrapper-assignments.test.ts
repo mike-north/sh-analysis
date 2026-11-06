@@ -157,6 +157,7 @@ describe("utility assignment operands", () => {
     "rejects an invalid grammar %j at the boundary",
     (assignmentOperands) => {
       // Deliberately inject untyped caller data to exercise the runtime boundary.
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Deliberately malformed JavaScript input must reach runtime validation despite the stricter public TypeScript contract.
       const spec = {
         names: ["retry"],
         assignmentOperands,
@@ -172,5 +173,5 @@ it("rejects the removed shorthand instead of silently applying or ignoring an as
   const removed = { names: ["retry"], skipAssignmentOperands: true };
   expect(() =>
     resolve("retry A=1 rm", { transparentWrappers: [removed] }),
-  ).toThrowError(/skipAssignmentOperands.*removed.*assignmentOperands/);
+  ).toThrow(/skipAssignmentOperands.*removed.*assignmentOperands/);
 });

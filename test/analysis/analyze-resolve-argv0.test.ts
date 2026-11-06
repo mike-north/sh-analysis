@@ -862,6 +862,7 @@ describe("resolveArgv0 — review fix: DEFAULT_TRANSPARENT_WRAPPERS is frozen", 
     // testing runtime immutability of a `readonly string[]` field, which
     // needs a real (typed, not suppressed) escape hatch to call a mutating
     // method the compile-time type otherwise correctly forbids.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- A mutable test view verifies that frozen public defaults reject attempted mutation at runtime.
     const mutableNames = entry?.names as string[] | undefined;
     expect(() => {
       mutableNames?.push("nonsense");
@@ -871,16 +872,20 @@ describe("resolveArgv0 — review fix: DEFAULT_TRANSPARENT_WRAPPERS is frozen", 
 
 describe("resolveArgv0 — review fix: malformed injected WrapperSpec entries throw a typed error", () => {
   it.each([
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Deliberately malformed JavaScript input must reach runtime validation despite the stricter public TypeScript contract.
     ["names missing entirely", {} as WrapperSpec],
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Deliberately malformed JavaScript input must reach runtime validation despite the stricter public TypeScript contract.
     ["names is not an array", { names: "env" } as unknown as WrapperSpec],
     ["names is an empty array", { names: [] }],
     ["names contains an empty string", { names: [""] }],
     [
       "noArgFlags is not an array of strings",
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Deliberately malformed JavaScript input must reach runtime validation despite the stricter public TypeScript contract.
       { names: ["x"], noArgFlags: "bad" as unknown as string[] },
     ],
     [
       "argFlags contains a non-string element",
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Deliberately malformed JavaScript input must reach runtime validation despite the stricter public TypeScript contract.
       { names: ["x"], argFlags: [1] as unknown as string[] },
     ],
     [
@@ -908,6 +913,7 @@ describe("resolveArgv0 — review fix: malformed injected WrapperSpec entries th
 
   it('exposes code === "SH_ANALYSIS_INVALID_WRAPPER_SPEC" (rename: eslint-sh#17)', () => {
     const invoke = () =>
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Deliberately malformed JavaScript input must reach runtime validation despite the stricter public TypeScript contract.
       resolveArgv0(site("rm x"), { transparentWrappers: [{} as WrapperSpec] });
     expect(invoke).toThrow(ShAnalyzeInvalidWrapperSpecError);
     let caught: unknown;
@@ -916,9 +922,9 @@ describe("resolveArgv0 — review fix: malformed injected WrapperSpec entries th
     } catch (error) {
       caught = error;
     }
-    expect((caught as ShAnalyzeInvalidWrapperSpecError).code).toBe(
-      "SH_ANALYSIS_INVALID_WRAPPER_SPEC",
-    );
+    expect(
+      caught instanceof ShAnalyzeInvalidWrapperSpecError && caught.code,
+    ).toBe("SH_ANALYSIS_INVALID_WRAPPER_SPEC");
   });
 
   it("the default table (no transparentWrappers override) is never validated at runtime — only caller-supplied tables are", () => {
@@ -1087,6 +1093,7 @@ describe("resolveArgv0 — shell builtin wrapper identity (#75)", () => {
     "rejects non-boolean shellBuiltin=$shellBuiltin",
     ({ shellBuiltin }) => {
       // Exercise JavaScript boundary data that cannot satisfy the public type.
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Deliberately malformed JavaScript input must reach runtime validation despite the stricter public TypeScript contract.
       const spec = {
         names: ["builtin"],
         shellBuiltin,
