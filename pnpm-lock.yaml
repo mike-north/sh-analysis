@@ -14,6 +14,9 @@ importers:
       "@changesets/cli":
         specifier: 2.29.8
         version: 2.29.8(@types/node@22.19.0)
+      "@changesets/get-release-plan":
+        specifier: 4.0.16
+        version: 4.0.16
       "@eslint-community/eslint-plugin-eslint-comments":
         specifier: 4.8.1
         version: 4.8.1(eslint@9.39.5(jiti@2.6.1))
@@ -26,6 +29,9 @@ importers:
       "@types/node":
         specifier: 22.19.0
         version: 22.19.0
+      "@types/semver":
+        specifier: 7.7.1
+        version: 7.7.1
       concurrently:
         specifier: 10.0.3
         version: 10.0.3
@@ -44,6 +50,9 @@ importers:
       prettier:
         specifier: ^3.9.10
         version: 3.9.10
+      semver:
+        specifier: 7.8.6
+        version: 7.8.6
       syncpack:
         specifier: 15.3.2
         version: 15.3.2
@@ -1075,6 +1084,12 @@ packages:
         integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==,
       }
 
+  "@types/semver@7.7.1":
+    resolution:
+      {
+        integrity: sha512-FmgJfu+MOcQ370SD0ev7EI8TlCAfKYU+B4m5T3yXc1CiRN94g/SZPtsCkk506aUDtlMnFZvasDwHHUcZUEaYuA==,
+      }
+
   "@typescript-eslint/eslint-plugin@8.64.0":
     resolution:
       {
@@ -1663,7 +1678,8 @@ packages:
         integrity: sha512-DgZS62aPLXKlnxILS/AYCoRvHaZeXceIzlXPkkGGzJWSow1aEk0lbTlxUSlyjC8jcaKxAdOnTDz+o1JFSBsyjw==,
       }
     engines: { node: ^18.18.0 || ^20.9.0 || >=21.1.0 }
-    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+    deprecated: This version is no longer supported. Please see
+      https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: "*"
@@ -4103,6 +4119,8 @@ snapshots:
       undici-types: 6.21.0
 
   "@types/normalize-package-data@2.4.4": {}
+
+  "@types/semver@7.7.1": {}
 
   "@typescript-eslint/eslint-plugin@8.64.0(@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.5(jiti@2.6.1))(typescript@5.9.3)":
     dependencies:

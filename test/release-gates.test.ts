@@ -42,7 +42,7 @@ function fixture(
   t.after(() => {
     rmSync(directory, { recursive: true, force: true });
   });
-  // Give Changesets its own base ref; tests must not inherit refs from the enclosing worktree.
+  // Give the CLI preparation oracle its own Git repository; fixtures never inherit enclosing refs.
   for (const args of [
     ["init", "--initial-branch=main"],
     [
@@ -216,14 +216,6 @@ await test("CI runs both gates on every PR and main push, release guards before 
     (step) => step.uses === "actions/checkout@v4",
   );
   assert.ok(checkout);
-  assert.equal(checkout.with["fetch-depth"], 0);
-  assert.ok(
-    ci.jobs.check.steps.some(
-      (step) =>
-        step.if === "github.event_name == 'pull_request'" &&
-        step.run === "git branch main origin/main",
-    ),
-  );
   const commands = ci.jobs.check.steps
     .map((step) => step.run)
     .filter(Boolean)
