@@ -59,7 +59,13 @@ Version and changelog preparation uses Changesets. Add a changeset with
 run `pnpm version:prepare` and commit the resulting versions and `CHANGELOG.md`
 before dispatching Release with the exact prepared version. Preparation never
 publishes. Both CI and Release reject major changesets and public current or
-planned versions outside 0.x. This project stays in the 0.x series until the owner
+planned versions outside 0.x. The version gate always plans the complete working
+snapshot with pinned `@changesets/get-release-plan`, the public planner used by
+the installed Changesets CLI; it does not enforce Git-diff or missing-changeset
+eligibility. Empty plans are valid, including prepared version commits. Current
+and planned versions must be exact, unprefixed SemVer (validated by pinned
+`semver`); numeric prerelease identifiers cannot have leading zeros, while build
+metadata can. This project stays in the 0.x series until the owner
 declares the shape stable; there is no override flag.
 
 TypeScript tooling covers all authored `.ts`, `.tsx`, `.mts`, and `.cts` files,
@@ -67,7 +73,9 @@ including tests and the TypeScript ESLint configuration. ESLint loads its config
 through Jiti; Node runs release scripts and package contract tests with native type stripping,
 explicitly enabled for compatibility with the declared Node 22.14 minimum.
 `tsconfig.json` owns strict type checking for source, scripts, config, and tests;
-`tsconfig.build.json` emits only package sources into `dist/`. Explicit and implicit
+`tsconfig.build.json` emits only package sources into `dist/`. Declaration tests
+retain their expected-error assertions under tsd, which also runs in `pnpm check`
+and checks imported declaration-test helpers with the strict root options. Explicit and implicit
 `any` and unsafe uses are rejected. An exceptional ESLint suppression must explain
 on that same directive why the type is appropriate; unused suppressions fail lint.
 

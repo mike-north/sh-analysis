@@ -1,5 +1,6 @@
 /** Owner-controlled stability policy and trusted-publisher identity are independent release requirements. */
 
+import { parse } from "semver";
 import { releaseRecord } from "./release-data.ts";
 
 /** Only the owner can declare stability; automation has no escape hatch from the 0.x ceiling. */
@@ -11,12 +12,16 @@ export function assertZeroVersion(
   version: unknown,
   source: unknown,
 ): asserts version is string {
-  if (
-    typeof version !== "string" ||
-    !/^0\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*)?(?:\+[\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*)?$/.test(
-      version,
-    )
-  ) {
+  // npm's strict parser still accepts a leading v and trims whitespace. Package
+  // versions here must use exact unprefixed SemVer spelling; build identifiers are
+  // valid metadata and must not be lost by comparing the parser's normalized version.
+  const parsed =
+    typeof version === "string" &&
+    version === version.trim() &&
+    /^[0-9]/.test(version)
+      ? parse(version)
+      : null;
+  if (parsed?.major !== 0) {
     throw new Error(
       `${String(source)}: rejected version ${String(version)}. ${stabilityPolicy}`,
     );
