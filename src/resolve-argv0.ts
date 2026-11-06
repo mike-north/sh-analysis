@@ -592,11 +592,12 @@ export interface ResolveArgv0Options {
    * (e.g. a `with-retry` wrapper) — the table is plain data, not baked-in
    * policy.
    *
-   * Validated at the {@link resolveArgv0} boundary: a malformed entry (a
-   * non-array `names`, an empty `names`, or a wrong-typed flag field)
-   * throws {@link ShAnalyzeInvalidWrapperSpecError} immediately, rather
-   * than failing later with a confusing native `TypeError` deep inside
-   * flag matching.
+   * Only omission or `undefined` selects defaults; an empty array deliberately
+   * disables wrapper following. A supplied table must be an array with a valid
+   * non-null object at every position, and flag arrays must contain strings in
+   * every slot. Non-array containers (including `null`), missing table/field
+   * elements and malformed entries throw {@link ShAnalyzeInvalidWrapperSpecError}
+   * before command matching rather than becoming defaults or native failures.
    */
   readonly transparentWrappers?: readonly WrapperSpec[];
 
@@ -1195,6 +1196,14 @@ function isNonEmptyStringArray(value: unknown): value is readonly string[] {
  */
 function validateWrapperSpec(spec: WrapperSpec, index: number): void {
   const context = `transparentWrappers[${String(index)}]`;
+  // Runtime callers can bypass the public type, including sparse table slots.
+  // Reject the raw entry before reading fields or using object-only operators.
+  const entry: unknown = spec;
+  if (typeof entry !== "object" || entry === null) {
+    throw new ShAnalyzeInvalidWrapperSpecError(
+      `${context} must be a non-null object`,
+    );
+  }
   if (!isNonEmptyStringArray(spec.names)) {
     throw new ShAnalyzeInvalidWrapperSpecError(
       `${context}.names must be a non-empty array of non-empty strings`,
@@ -1210,7 +1219,10 @@ function validateWrapperSpec(spec: WrapperSpec, index: number): void {
     const value = spec[field];
     if (
       value !== undefined &&
-      !(Array.isArray(value) && value.every((item) => typeof item === "string"))
+      !(
+        Array.isArray(value) &&
+        Array.from(value).every((item) => typeof item === "string")
+      )
     ) {
       throw new ShAnalyzeInvalidWrapperSpecError(
         `${context}.${field} must be an array of strings when present`,
@@ -1496,9 +1508,23 @@ export function resolveArgv0(
       "resolveArgv0 expects a CommandSite with at least one argv word",
     );
   }
-  const wrappers = options?.transparentWrappers ?? DEFAULT_TRANSPARENT_WRAPPERS;
-  if (options?.transparentWrappers !== undefined) {
-    wrappers.forEach(validateWrapperSpec);
+  const suppliedWrappers = options?.transparentWrappers;
+  const wrappers =
+    suppliedWrappers === undefined
+      ? DEFAULT_TRANSPARENT_WRAPPERS
+      : suppliedWrappers;
+  if (suppliedWrappers !== undefined) {
+    // Omission alone selects defaults; a supplied malformed container is not an opt-out.
+    const table: unknown = suppliedWrappers;
+    if (!Array.isArray(table)) {
+      throw new ShAnalyzeInvalidWrapperSpecError(
+        "transparentWrappers must be an array",
+      );
+    }
+    // Validate every declared position before scanning, including missing slots.
+    for (let index = 0; index < wrappers.length; index++) {
+      validateWrapperSpec(wrappers[index], index);
+    }
   }
   const interpreters =
     options?.embeddedCommandInterpreters ??
