@@ -1,9 +1,9 @@
 /** Release tests assert authorization and artifact outcomes independently of workflow execution. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { assertRelease } from "../scripts/release-contract.mjs";
+import { assertRelease } from "../scripts/release-contract.ts";
 import test from "node:test";
-import { parse } from "yaml";
+import { objects, workflow as readWorkflow } from "./support.ts";
 
 const repository = "mike-north/sh-analysis";
 const approved = {
@@ -31,7 +31,7 @@ function guard(packageOverride = {}, environmentOverride = {}) {
   }
 }
 
-test("release accepts only the explicitly selected main-branch package version", () => {
+await test("release accepts only the explicitly selected main-branch package version", () => {
   assert.equal(guard().status, 0);
   for (const environment of [
     { GITHUB_EVENT_NAME: "push" },
@@ -48,7 +48,7 @@ test("release accepts only the explicitly selected main-branch package version",
     );
 });
 
-test("release refuses placeholders, non-0.x versions and incorrect package identities", () => {
+await test("release refuses placeholders, non-0.x versions and incorrect package identities", () => {
   for (const version of [
     "0.0.0-stage",
     "0.0.0",
@@ -71,8 +71,10 @@ test("release refuses placeholders, non-0.x versions and incorrect package ident
   );
 });
 
-test("workflow is manual-only and scopes OIDC to a GitHub-hosted publication job", () => {
-  const workflow = parse(readFileSync(".github/workflows/release.yml", "utf8"));
+await test("workflow is manual-only and scopes OIDC to a GitHub-hosted publication job", () => {
+  const workflow = readWorkflow(
+    readFileSync(".github/workflows/release.yml", "utf8"),
+  );
   assert.deepEqual(Object.keys(workflow.on), ["workflow_dispatch"]);
   assert.deepEqual(workflow.permissions, { contents: "read" });
   assert.equal(workflow.jobs.publish["runs-on"], "ubuntu-latest");
@@ -120,14 +122,18 @@ test("workflow is manual-only and scopes OIDC to a GitHub-hosted publication job
   );
 });
 
-test("release package contains executable and declaration entry points from a real build", async () => {
+await test("release package contains executable and declaration entry points from a real build", async () => {
   const { spawnSync } = await import("node:child_process");
   const result = spawnSync("npm", ["pack", "--dry-run", "--json"], {
     encoding: "utf8",
   });
   assert.equal(result.status, 0, result.stderr);
-  const [pack] = JSON.parse(result.stdout);
-  const files = pack.files.map((file) => file.path);
+  const [pack] = objects(JSON.parse(result.stdout));
+  assert.ok(pack);
+  const files = objects(pack.files).map((file) => {
+    assert.ok(typeof file.path === "string");
+    return file.path;
+  });
   for (const path of [
     "dist/index.js",
     "dist/index.d.ts",
