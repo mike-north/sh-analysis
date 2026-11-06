@@ -13,19 +13,23 @@ import {
   assertRelease,
   assertZeroVersion,
   stabilityPolicy,
-} from "./release-contract.mjs";
-import { checkChangesets } from "./check-changesets.mjs";
+} from "./release-contract.ts";
+import { isReleaseList, releaseRecord } from "./release-data.ts";
+import { checkChangesets } from "./check-changesets.ts";
 
 /** Discover source manifests independently of workspace/ignore configuration so none can hide a 1.x version. */
-export function checkVersions(root = process.cwd()) {
-  function visit(directory) {
+export function checkVersions(root = process.cwd()): void {
+  function visit(directory: string): void {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
       const path = join(directory, entry.name);
       // Installed dependencies and Git metadata are outside this repository's publication scope.
       if (entry.isDirectory() && !["node_modules", ".git"].includes(entry.name))
         visit(path);
       else if (entry.isFile() && entry.name === "package.json") {
-        const manifest = JSON.parse(readFileSync(path, "utf8"));
+        const manifest = releaseRecord(
+          JSON.parse(readFileSync(path, "utf8")),
+          path,
+        );
         if (manifest.private !== true)
           assertZeroVersion(manifest.version, path);
       }
@@ -33,9 +37,10 @@ export function checkVersions(root = process.cwd()) {
   }
   visit(root);
   const changesets = join(root, ".changeset");
-  const pending = readdirSync(changesets, { recursive: true }).some(
-    (path) => path.endsWith(".md") && basename(path) !== "README.md",
-  );
+  const pending = readdirSync(changesets, {
+    recursive: true,
+    encoding: "utf8",
+  }).some((path) => path.endsWith(".md") && basename(path) !== "README.md");
   // Without pending changesets or prerelease state, versioning has no next versions.
   // Status also enforces missing-changeset policy, which is outside this ceiling's responsibility.
   if (!pending && !existsSync(join(changesets, "pre.json"))) return;
@@ -54,14 +59,19 @@ export function checkVersions(root = process.cwd()) {
       throw new Error(
         `Cannot compute Changesets release plan: ${result.stderr || result.stdout}. ${stabilityPolicy}`,
       );
-    const plan = JSON.parse(readFileSync(output, "utf8"));
-    if (!Array.isArray(plan.releases))
+    const plan = releaseRecord(
+      JSON.parse(readFileSync(output, "utf8")),
+      "Changesets plan",
+    );
+    if (!isReleaseList(plan.releases))
       throw new Error(`Invalid Changesets release plan. ${stabilityPolicy}`);
-    for (const release of plan.releases)
+    for (const entry of plan.releases) {
+      const release = releaseRecord(entry, "Changesets release");
       assertZeroVersion(
         release.newVersion,
-        `Changesets next version for ${release.name}`,
+        `Changesets next version for ${String(release.name)}`,
       );
+    }
   } finally {
     rmSync(temporary, { recursive: true, force: true });
   }

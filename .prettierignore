@@ -1,0 +1,6 @@
+# Preserve the verbatim shared responsibility map and generator-owned output.
+AGENTS.md
+api-report/
+temp/
+.pnpm-store/
+scratch/

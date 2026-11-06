@@ -12,17 +12,23 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
-import test from "node:test";
-import { parse } from "yaml";
+import test, { type TestContext } from "node:test";
+import { object, workflow } from "./support.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const policy =
   /stays in the 0\.x series until the owner declares the shape stable.*no override flag/is;
 
 // Fixtures live inside the worktree and outside the repository's publishable sources.
-function fixture(t, { version = "0.4.0", bump = "minor" } = {}) {
-  const directory = mkdtempSync(join(root, "node_modules/.release-gate-"));
-  t.after(() => rmSync(directory, { recursive: true, force: true }));
+function fixture(
+  t: TestContext,
+  { version = "0.4.0", bump = "minor" } = {},
+): string {
+  mkdirSync(join(root, "temp"), { recursive: true });
+  const directory = mkdtempSync(join(root, "temp/.release-gate-"));
+  t.after(() => {
+    rmSync(directory, { recursive: true, force: true });
+  });
   // Give Changesets its own base ref; tests must not inherit refs from the enclosing worktree.
   for (const args of [
     ["init", "--initial-branch=main"],
@@ -59,16 +65,20 @@ function fixture(t, { version = "0.4.0", bump = "minor" } = {}) {
   return directory;
 }
 
-function run(script, directory) {
-  return spawnSync(process.execPath, [join(root, "scripts", script)], {
-    cwd: directory,
-    encoding: "utf8",
-  });
+function run(script: string, directory: string) {
+  return spawnSync(
+    process.execPath,
+    ["--experimental-strip-types", join(root, "scripts", script)],
+    {
+      cwd: directory,
+      encoding: "utf8",
+    },
+  );
 }
 
-test("G1 refuses major declarations, including nested files and unknown packages", (t) => {
+await test("G1 refuses major declarations, including nested files and unknown packages", (t) => {
   const directory = fixture(t, { bump: "major" });
-  const result = run("check-changesets.mjs", directory);
+  const result = run("check-changesets.ts", directory);
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, policy);
   writeFileSync(
@@ -80,51 +90,51 @@ test("G1 refuses major declarations, including nested files and unknown packages
     join(directory, ".changeset/nested/blocked.md"),
     "---\n'@other/package': major\n---\nBlocked.\n",
   );
-  const nested = run("check-changesets.mjs", directory);
+  const nested = run("check-changesets.ts", directory);
   assert.notEqual(nested.status, 0);
   assert.match(nested.stderr, policy);
 });
 
-test("G2 refuses current public versions at or beyond 1.0, including prereleases", (t) => {
+await test("G2 refuses current public versions at or beyond 1.0, including prereleases", (t) => {
   for (const version of ["1.0.0", "2.0.0", "1.0.0-rc.1"]) {
-    const result = run("check-versions.mjs", fixture(t, { version }));
+    const result = run("check-versions.ts", fixture(t, { version }));
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, policy);
   }
 });
 
-test("G2 discovers nested public manifests but permits private packages", (t) => {
+await test("G2 discovers nested public manifests but permits private packages", (t) => {
   const directory = fixture(t);
   mkdirSync(join(directory, "tools/nested"), { recursive: true });
   const manifest = join(directory, "tools/nested/package.json");
   writeFileSync(manifest, JSON.stringify({ name: "nested", version: "1.0.0" }));
-  const blocked = run("check-versions.mjs", directory);
+  const blocked = run("check-versions.ts", directory);
   assert.notEqual(blocked.status, 0);
   assert.match(blocked.stderr, policy);
   writeFileSync(
     manifest,
     JSON.stringify({ name: "nested", version: "2.0.0", private: true }),
   );
-  const allowed = run("check-versions.mjs", directory);
+  const allowed = run("check-versions.ts", directory);
   assert.equal(allowed.status, 0, allowed.stderr);
 });
 
-test("G2 rejects the real next Changesets version even when current manifests are 0.x", (t) => {
+await test("G2 rejects the real next Changesets version even when current manifests are 0.x", (t) => {
   const directory = fixture(t, { bump: "major" });
   // A documentation-like suffix must not hide a real changeset from planning.
   renameSync(
     join(directory, ".changeset/outcome.md"),
     join(directory, ".changeset/feature-README.md"),
   );
-  const result = run("check-versions.mjs", directory);
+  const result = run("check-versions.ts", directory);
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /1\.0\.0/);
   assert.match(result.stderr, policy);
 });
 
-test("0.x plus minor passes both gates and Changesets prepares a version and changelog", (t) => {
+await test("0.x plus minor passes both gates and Changesets prepares a version and changelog", (t) => {
   const directory = fixture(t);
-  for (const script of ["check-changesets.mjs", "check-versions.mjs"]) {
+  for (const script of ["check-changesets.ts", "check-versions.ts"]) {
     const result = run(script, directory);
     assert.equal(result.status, 0, result.stderr);
   }
@@ -135,7 +145,8 @@ test("0.x plus minor passes both gates and Changesets prepares a version and cha
   );
   assert.equal(result.status, 0, result.stderr);
   assert.equal(
-    JSON.parse(readFileSync(join(directory, "package.json"))).version,
+    object(JSON.parse(readFileSync(join(directory, "package.json"), "utf8")))
+      .version,
     "0.5.0",
   );
   assert.match(
@@ -144,24 +155,24 @@ test("0.x plus minor passes both gates and Changesets prepares a version and cha
   );
 });
 
-test("invalid changesets and versions fail closed", (t) => {
+await test("invalid changesets and versions fail closed", (t) => {
   const directory = fixture(t);
   writeFileSync(join(directory, ".changeset/outcome.md"), "not frontmatter");
-  assert.notEqual(run("check-changesets.mjs", directory).status, 0);
+  assert.notEqual(run("check-changesets.ts", directory).status, 0);
   const invalid = fixture(t, { version: "not-a-version" });
-  assert.notEqual(run("check-versions.mjs", invalid).status, 0);
+  assert.notEqual(run("check-versions.ts", invalid).status, 0);
 });
 
-test("no pending changesets permits tooling-only commits and prepared 0.x releases", (t) => {
+await test("no pending changesets permits tooling-only commits and prepared 0.x releases", (t) => {
   const directory = fixture(t);
   rmSync(join(directory, ".changeset/outcome.md"));
-  for (const script of ["check-changesets.mjs", "check-versions.mjs"]) {
+  for (const script of ["check-changesets.ts", "check-versions.ts"]) {
     const result = run(script, directory);
     assert.equal(result.status, 0, result.stderr);
   }
 });
 
-test("publication entry point enforces the same ceiling before checking dispatch identity", (t) => {
+await test("publication entry point enforces the same ceiling before checking dispatch identity", (t) => {
   const directory = fixture(t);
   cpSync(join(root, "scripts"), join(directory, "scripts"), {
     recursive: true,
@@ -174,7 +185,7 @@ test("publication entry point enforces the same ceiling before checking dispatch
   );
   const result = spawnSync(
     process.execPath,
-    [join(directory, "scripts/check-release.mjs")],
+    ["--experimental-strip-types", join(directory, "scripts/check-release.ts")],
     { cwd: directory, encoding: "utf8" },
   );
   assert.notEqual(result.status, 0);
@@ -182,17 +193,17 @@ test("publication entry point enforces the same ceiling before checking dispatch
   assert.match(result.stderr, /artifact|dist\/package\/package.json/);
 });
 
-test("CI runs both gates on every PR and main push, release guards before publication", () => {
-  const ci = parse(
+await test("CI runs both gates on every PR and main push, release guards before publication", () => {
+  const ci = workflow(
     readFileSync(join(root, ".github/workflows/ci.yml"), "utf8"),
   );
   assert.ok(Object.hasOwn(ci.on, "pull_request"));
-  assert.deepEqual(ci.on.push.branches, ["main"]);
-  assert.equal(
-    ci.jobs.check.steps.find((step) => step.uses === "actions/checkout@v4")
-      .with["fetch-depth"],
-    0,
+  assert.deepEqual(object(ci.on.push).branches, ["main"]);
+  const checkout = ci.jobs.check.steps.find(
+    (step) => step.uses === "actions/checkout@v4",
   );
+  assert.ok(checkout);
+  assert.equal(checkout.with["fetch-depth"], 0);
   assert.ok(
     ci.jobs.check.steps.some(
       (step) =>
@@ -212,7 +223,7 @@ test("CI runs both gates on every PR and main push, release guards before public
     "pnpm test",
   ])
     assert.ok(commands.includes(command), command);
-  const release = parse(
+  const release = workflow(
     readFileSync(join(root, ".github/workflows/release.yml"), "utf8"),
   );
   const steps = release.jobs.publish.steps;
@@ -220,9 +231,15 @@ test("CI runs both gates on every PR and main push, release guards before public
   const publish = steps.findIndex((step) => step.run?.includes("npm publish"));
   assert.ok(guard >= 0 && guard < publish);
   assert.ok(!steps[guard]["continue-on-error"]);
-  const scripts = JSON.parse(readFileSync(join(root, "package.json"))).scripts;
+  const scripts = object(
+    object(JSON.parse(readFileSync(join(root, "package.json"), "utf8")))
+      .scripts,
+  );
+  assert.equal(typeof scripts["version:prepare"], "string");
+  const prepare = scripts["version:prepare"];
+  assert.ok(typeof prepare === "string");
   assert.match(
-    scripts["version:prepare"],
+    prepare,
     /check:changesets.*check:versions.*changeset version.*check:versions/,
   );
 });

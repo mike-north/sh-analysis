@@ -27,5 +27,6 @@ jobs:
       - run: pnpm check:changesets
       - run: pnpm check:versions
       - run: pnpm build
+      # Includes type-aware lint, the approved API report, Knip, and syncpack lint.
       - run: pnpm check
       - run: pnpm test

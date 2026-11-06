@@ -148,3 +148,36 @@ The repository defines no separate lint task; check is TypeScript validation and
 Prettier validates formatting. Gate test command:
 `node --test test/release-gates.test.mjs`.
 No actual publish/tag command or remote CI run was performed.
+
+## 2026-11-06: strict TypeScript tooling and API review
+
+Added intended-outcome tests first: the initial run failed for missing ESLint
+configuration, type-check command, and approved API report. A separate migration
+contract failed against inherited JavaScript release commands before their
+TypeScript migration. Tests now exercise all TypeScript extensions in source and
+tests, unsafe values, directive explanations and usage, unknown narrowing, and an
+unapproved public export without rewriting the committed report.
+
+Added type-aware flat ESLint, explicit noImplicitAny in both compiler configs,
+pinned API Extractor/Documenter with committed reports and Markdown, Knip, and
+single-manifest syncpack validation. CI's existing check command includes all
+validation lanes. Preserved the lead's amended responsibility map verbatim and
+linked CLAUDE.md to AGENTS.md; no boundary contradictions were found.
+
+At the lead's explicit scope expansion, migrated all inherited release scripts
+and tests to TypeScript, validating unknown JSON/YAML values without suppressions.
+Native type stripping is explicit for the declared Node 22 minimum; release
+fixtures live under temp because Node rejects stripping inside node_modules.
+Tooling tests use isolated temporary projects. All 13 original release contracts,
+Changesets preparation, the no-override 0.x ceiling, and manual OIDC workflow are
+preserved. No product source or release workflow changed; no authored JavaScript
+remains. Intentional any spellings occur only in lint-test fixture strings.
+
+Local verification on Node 22.22.1/pnpm 11.12.0: frozen install, build, build:docs,
+check (types/lint/API/Knip/syncpack), check:changesets, check:versions, and all 17
+tests passed. No push, GitHub write, merge, tag, or actual publication occurred.
+Full handoff evidence and exact committed head are recorded in scratch reports.
+Supplemental Node 24.14.0 verification passed both gates and all 13 release tests.
+Generated documentation uses installed Prettier in build:docs; Extractor reports
+use its schema-supported LF setting. Affected generation/API checks passed after
+this formatting alignment; generated whitespace does not require weaker hooks.
