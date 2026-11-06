@@ -287,14 +287,22 @@ export function decodeAnsiCString(raw: string): AnsiCDecodeResult {
       case "c": {
         const controlChar = raw.charAt(i + 2);
         if (controlChar !== "") {
-          // Bash's control-character formula: the char XOR 0x40 (e.g. 'A'
-          // 0x41 ^ 0x40 = 0x01). See ANSI-C Quoting's "\cx" entry.
-          const code = (controlChar.toUpperCase().charCodeAt(0) ^ 0x40) & 0xff;
+          // Bash transforms the operand's first byte, not a Unicode character.
+          // Non-ASCII operands can leave invalid UTF-8 continuation bytes behind,
+          // so they cannot support this operation's exact Unicode-text claim.
+          const operand = controlChar.charCodeAt(0);
+          if (operand > 0x7f) {
+            return { ok: false };
+          }
+          // ASCII control notation selects the low five bits; '?' denotes DEL.
+          const code = controlChar === "?" ? 0x7f : operand & 0x1f;
           if (!isSupportedByte(code)) {
             return { ok: false };
           }
           text += String.fromCharCode(code);
-          i += 3;
+          // A doubled backslash is one control operand. A single backslash
+          // before any other character leaves that following literal intact.
+          i += controlChar === "\\" && raw.charAt(i + 3) === "\\" ? 4 : 3;
         } else {
           text += ch;
           i += 1;
