@@ -10,6 +10,12 @@ The binding owner removes `src/analyze`, the `./analyze` export, syntax-root
 analysis exception exports and analysis-only tests/API documentation. The
 independent analysis error base is `ShAnalysisError`; concrete depth/configuration
 errors have `SH_ANALYSIS_*` codes and do not derive from `ShAstError`.
+`ShAnalyzeResourceError` adds `code: 'SH_ANALYSIS_RESOURCE'`, operation
+`'brace-observation-copy'`, and the original observed stack-exhaustion `RangeError`
+as standard `cause`. Consumers should preserve that error rather than turn it
+into a successful/empty result. This is a host-copy refusal, not enumeration's
+fixed depth budget or a duplicate binding depth policy. Unrelated host failures
+and public binding failures retain their original identity.
 
 Remove the old private `word-braces` analysis bridge operation. Public synchronous
 `splitBraces(word: Word): boolean` remains solely as faithful syntax behavior.

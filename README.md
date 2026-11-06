@@ -35,6 +35,12 @@ ASCII byte escapes remain supported. No Latin-1 or arbitrary-locale byte-string
 model is inferred. Wrapper/interpreter defaults are documented,
 immutable and replaceable.
 
+An observed stack-exhaustion failure while copying a brace-observation input throws
+`ShAnalyzeResourceError` (`SH_ANALYSIS_RESOURCE`, operation `brace-observation-copy`)
+with the original `RangeError` as its standard `cause`. This analysis-owned refusal
+has no fixed syntax-depth threshold. It is distinct from command enumeration's
+fixed depth budget; binding failures and unrelated host errors keep their identity.
+
 Develop with Node22 and pnpm11.12: run `pnpm install`, `pnpm build`, `pnpm check`
 and `pnpm test`. Tests cover independent errors, syntax identity, analysis meaning,
 uncertainty, declarations and a real packed installation in a cold process.
