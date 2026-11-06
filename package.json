@@ -28,6 +28,9 @@
     "check": "pnpm check:typecheck && pnpm check:test-types && pnpm check:format",
     "test": "pnpm test:contracts && pnpm test:analysis && pnpm test:types",
     "check:release": "node scripts/check-release.mjs",
+    "check:changesets": "node scripts/check-changesets.mjs",
+    "check:versions": "node scripts/check-versions.mjs",
+    "version:prepare": "pnpm check:changesets && pnpm check:versions && changeset version && pnpm check:versions",
     "test:contracts": "node --test test/*.test.mjs",
     "test:analysis": "vitest run",
     "test:types": "tsd",
@@ -37,6 +40,7 @@
     "check:test-types": "tsc -p tsconfig.test.json"
   },
   "devDependencies": {
+    "@changesets/cli": "2.29.8",
     "@types/node": "^24.19.2",
     "prettier": "^3.9.10",
     "tsd": "^0.33.0",

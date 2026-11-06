@@ -1,5 +1,26 @@
-/** Publication is permitted only for an explicitly chosen, non-placeholder 0.x main revision. */
+/** Owner-controlled stability policy and trusted-publisher identity are independent release requirements. */
+
+/** Only the owner can declare stability; automation has no escape hatch from the 0.x ceiling. */
+export const stabilityPolicy =
+  "This project stays in the 0.x series until the owner declares the shape stable; there is no override flag.";
+
+/** Reject unknown or nonzero major versions, including prereleases of a future stable major. */
+export function assertZeroVersion(version, source) {
+  if (
+    typeof version !== "string" ||
+    !/^0\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*)?(?:\+[\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*)?$/.test(
+      version,
+    )
+  ) {
+    throw new Error(
+      `${source}: rejected version ${String(version)}. ${stabilityPolicy}`,
+    );
+  }
+}
+
+/** Publication additionally requires an explicitly chosen, non-placeholder main revision. */
 export function assertRelease(packageJson, environment) {
+  assertZeroVersion(packageJson.version, packageJson.name);
   const repository = "mike-north/sh-analysis";
   if (
     environment.GITHUB_EVENT_NAME !== "workflow_dispatch" ||

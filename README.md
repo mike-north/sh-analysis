@@ -51,3 +51,11 @@ Publication uses manual dispatch of `.github/workflows/release.yml` on main,
 an exact prepared stable 0.x version, and npm trusted publishing without an
 environment. The GitHub repository remains private. Ordinary validation has no
 publication permission. No long-lived npm token is used.
+
+Version and changelog preparation uses Changesets. Add a changeset with
+`pnpm exec changeset` for package changes (tooling-only changes need none), then
+run `pnpm version:prepare` and commit the resulting versions and `CHANGELOG.md`
+before dispatching Release with the exact prepared version. Preparation never
+publishes. Both CI and Release reject major changesets and public current or
+planned versions outside 0.x. This project stays in the 0.x series until the owner
+declares the shape stable; there is no override flag.
