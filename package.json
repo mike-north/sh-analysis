@@ -1,6 +1,6 @@
 {
   "name": "sh-analysis",
-  "version": "0.0.0-stage",
+  "version": "0.1.0",
   "description": "Shell word and command observations over the public sh-ast syntax model",
   "type": "module",
   "license": "MIT",
