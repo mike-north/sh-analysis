@@ -1,0 +1,39 @@
+# Publishing remains a deliberate action against main; bootstrap/staging versions are rejected.
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact prepared 0.x package version to publish
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  publish:
+    if: github.repository == 'mike-north/sh-analysis' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.12.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      # Node 24 is the publishing runtime; pin npm above the trusted-publishing minimum.
+      - run: npm install --global npm@11.21.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm check
+      - run: pnpm test
+      - run: pnpm check:release
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+      - run: npm pack --dry-run
+      # npm exchanges GitHub OIDC for a short-lived publish credential.
+      - run: npm publish --access public
