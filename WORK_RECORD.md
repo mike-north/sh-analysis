@@ -109,3 +109,42 @@ Full wrapper-validation gates pass on both Node 22.22.1 and 24.14.0 using latest
 Final wrapper artifact is /tmp/sh-analysis-wrapper-final-w_l82pik/sh-analysis-0.1.0.tgz, SHA2566e8340b65ef6f5eb7591f246cf78758cd2243d4b663da0bb56f5e0419d2a6149. Package-relevant source b74d3b24942daa8f1055354e5bba15d5ce4eb700; ordinary stable0.1 with no metadata rewrite. Both runtime fresh importers reject19 malformed configurations with own error and preserve six valid controls; actual public binding module identity matches. All23 analysis/currentbuild/installed members match; all78 final core installed members match. Compared to a765, only resolve-argv0.js and.d.ts change; declaration AST without comments is unchanged, proving no public type expansion. Latest core8e original/prospective differ only version metadata; compared to66c only packaged README changes. Receipt validation/wrapper-validation.json and external receipt.json/raw-validation.json/declaration-equivalence.json/draft-review-replies.md in the artifact directory.
 
 Root's independent reviewer separately verified actual6e package against ownb74 build/all23installed members, core8e/all78members,30bad configs+default/empty/frozen/repeatedalias controls on both runtimes, existing copyresource3xperNode/8013unchanged+reuse, coreoutput8xperNode/cold contracts; no new finding. Awaiting evidence-only finalhead readback to close report. Root says new core history sync has an identical entire tree to15797e7, so no analysis source churn. This final record commit also cleans work-record-only heredoc formatting from the source commit; packaged source unchanged. Root owns reply/resolution and release authority. Lock thread4489868945 remains open, hosted frozen lock gate real; no review requests, merge, dispatch, publication, fake integrity/local resolution or overrides.
+
+## 2026-11-06: owner-controlled 0.x release boundary
+
+Scope: local implementation on release-gate-0x only; no pushes, GitHub writes,
+publication, tags, or merges. Keep manual dispatch, exact prepared release input,
+trusted publishing, and placeholder rejection.
+
+Added intended-outcome gate tests before implementation. Initial gate suite failed
+because the Changesets configuration, gate commands, and CI workflow were absent.
+Tests cover major declarations (including nested/scoped/unknown package names),
+public current 1.x and future-major prereleases, nested public/private manifests,
+actual Changesets next-version rejection, 0.x/minor acceptance, generated version
+and CHANGELOG.md, invalid input, no pending changesets, release entry enforcement,
+and workflow ordering. Additional red evidence caught missing CI base-ref setup
+and an incorrectly broad README suffix exclusion; both were corrected.
+
+G1 parses changeset frontmatter using the existing YAML dependency. G2 extends
+scripts/check-release.mjs, recursively checking repository manifests independently
+of Changesets package selection and reading the pinned CLI's actual release plan.
+Only installed dependencies and Git metadata are excluded. No pending changesets
+and no prerelease state means no next release; do not apply Changesets' separate
+missing-changeset policy to tooling-only commits or prepared releases. Temporary
+plan output and fixtures remain in the worktree and are cleaned up. Policy failures
+state that the owner controls stability and there is no override flag.
+
+Added pinned @changesets/cli 2.29.8, main-based configuration, and version:prepare
+for gated version/changelog preparation. Tooling-only work requires no package bump;
+this change intentionally preserves 0.0.0-stage and adds no package changeset.
+CI explicitly runs both gates for every pull request and push to main, providing
+the main ref needed by Changesets. Release repeats both gates through its existing
+check:release command before npm pack/publish; authorization/authentication are
+unchanged. No plugin manifest is published by this repository.
+
+Local verification: Node 22.22.1, pnpm 11.12.0; frozen install, build, check,
+check:changesets, check:versions, all 13 tests, and Prettier checks passed.
+The repository defines no separate lint task; check is TypeScript validation and
+Prettier validates formatting. Gate test command:
+`node --test test/release-gates.test.mjs`.
+No actual publish/tag command or remote CI run was performed.
