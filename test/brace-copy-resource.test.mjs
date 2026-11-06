@@ -1,10 +1,10 @@
-/** The real host copy refusal is exercised outside the test runner with an ordinary Node stack. */
+/** Deep input must refuse at a known typed boundary on a normal stack, independently of host clone capacity. */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-test("a valid deep Word refuses through the analysis-owned copy boundary without mutation or poisoning reuse", () => {
+test("a valid deep Word has a known typed refusal without mutation or poisoning reuse", () => {
   const environment = { ...process.env };
   delete environment.NODE_OPTIONS;
   const result = spawnSync(
@@ -25,9 +25,21 @@ test("a valid deep Word refuses through the analysis-owned copy boundary without
   const observed = JSON.parse(result.stdout);
   assert.equal(observed.attempts.length, 3);
   for (const attempt of observed.attempts) {
-    assert.equal(attempt.code, "SH_ANALYSIS_RESOURCE");
-    assert.equal(attempt.operation, "brace-observation-copy");
-    assert.equal(attempt.cause, "RangeError");
+    if (attempt.stage === "analysis-copy") {
+      assert.equal(attempt.name, "ShAnalyzeResourceError");
+      assert.equal(attempt.code, "SH_ANALYSIS_RESOURCE");
+      assert.equal(attempt.operation, "brace-observation-copy");
+      assert.equal(attempt.cause, "RangeError");
+      assert.equal(attempt.causeMessage, "Maximum call stack size exceeded");
+    } else {
+      assert.equal(attempt.stage, "binding-input");
+      assert.equal(attempt.name, "ShInternalError");
+      assert.equal(attempt.code, "SH_AST_INTERNAL");
+      assert.equal(
+        attempt.message,
+        "SplitBraces input record depth 257 exceeds the bridge transport limit 256",
+      );
+    }
     assert.ok(attempt.recordsUnchanged >= 8000);
     assert.equal(attempt.reused, true);
   }

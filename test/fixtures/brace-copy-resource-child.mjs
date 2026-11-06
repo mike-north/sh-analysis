@@ -1,4 +1,4 @@
-/** A fresh normal-stack process tests the analysis copy boundary on complete public syntax records. */
+/** A fresh normal-stack process requires a known typed deep-input refusal, without assuming which host boundary refuses first. */
 import assert from "node:assert/strict";
 import {
   parseSync,
@@ -42,6 +42,35 @@ function remember(root) {
   };
 }
 
+/** Accept only the observed copy refusal or the binding's exact input-preflight refusal. */
+function refusalStage(failure) {
+  assert.ok(
+    failure,
+    "Deep input must refuse rather than return a successful observation",
+  );
+  if (failure instanceof analysis.ShAnalyzeResourceError) {
+    assert.ok(failure instanceof analysis.ShAnalysisError);
+    assert.ok(!(failure instanceof ShAstError));
+    assert.ok(!(failure instanceof analysis.ShAnalyzeMaxDepthError));
+    assert.equal(failure.code, "SH_ANALYSIS_RESOURCE");
+    assert.equal(failure.operation, "brace-observation-copy");
+    assert.ok(failure.cause instanceof RangeError);
+    assert.equal(failure.cause.message, "Maximum call stack size exceeded");
+    return "analysis-copy";
+  }
+  assert.ok(
+    failure instanceof ShInternalError,
+    `Unexpected deep-input failure: ${failure.name}: ${failure.message}`,
+  );
+  assert.ok(!(failure instanceof analysis.ShAnalysisError));
+  assert.equal(failure.code, "SH_AST_INTERNAL");
+  assert.equal(
+    failure.message,
+    "SplitBraces input record depth 257 exceeds the bridge transport limit 256",
+  );
+  return "binding-input";
+}
+
 const parameter = argument("${x:-x}").Parts[0];
 assert.equal(parameter.Type, "ParamExp");
 assert.ok(parameter.Exp);
@@ -59,10 +88,7 @@ const word = {
 const unchanged = remember(word);
 assert.throws(
   () => splitBraces(word),
-  (error) =>
-    error instanceof ShInternalError &&
-    error.message ===
-      "SplitBraces input record depth 257 exceeds the bridge transport limit 256",
+  (error) => refusalStage(error) === "binding-input",
 );
 unchanged();
 const attempts = [];
@@ -73,17 +99,9 @@ for (let iteration = 0; iteration < 3; iteration++) {
   } catch (error) {
     failure = error;
   }
-  assert.ok(
-    failure instanceof analysis.ShAnalysisError,
-    `Expected an analysis-owned refusal, observed ${failure?.name}: ${failure?.message}`,
-  );
-  assert.ok(failure instanceof analysis.ShAnalyzeResourceError);
-  assert.ok(!(failure instanceof ShAstError));
-  assert.ok(!(failure instanceof analysis.ShAnalyzeMaxDepthError));
-  assert.equal(failure.code, "SH_ANALYSIS_RESOURCE");
-  assert.equal(failure.operation, "brace-observation-copy");
-  assert.ok(failure.cause instanceof RangeError);
-  assert.equal(failure.cause.message, "Maximum call stack size exceeded");
+  // Host clone capacity varies. A completed copy must reach the same typed
+  // binding input refusal; a copy stack refusal must retain its own category.
+  const stage = refusalStage(failure);
   const recordsUnchanged = unchanged();
   const ordinary = parseSync('env A=1 printf "ok"');
   assert.equal(printSync(ordinary), 'env A=1 printf "ok"\n');
@@ -104,10 +122,13 @@ for (let iteration = 0; iteration < 3; iteration++) {
   });
   attempts.push({
     iteration,
+    stage,
     name: failure.name,
+    message: failure.message,
     code: failure.code,
     operation: failure.operation,
-    cause: failure.cause.name,
+    cause: failure.cause?.name,
+    causeMessage: failure.cause?.message,
     recordsUnchanged,
     reused: true,
   });
