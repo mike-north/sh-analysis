@@ -39,9 +39,14 @@ is not itself an expansion fact. Caller syntax and positions stay unchanged.
 Escape discrepancies are reported as unsupported rather than repaired with a
 second brace grammar.
 
-Analysis configuration and resource refusals derive from `ShAnalysisError`.
-They do not derive from binding/parser errors. Resource refusal returns no
-silently truncated inventory; the consumer decides how to respond.
+Analysis-owned configuration and resource refusals derive from `ShAnalysisError`.
+They do not derive from binding/parser errors. `ShAnalyzeResourceError` identifies
+observed host stack exhaustion at `brace-observation-copy`, preserving the original
+`RangeError` as the standard cause. This copy boundary has no fixed syntax-depth
+policy; unrelated copy errors and binding failures propagate unchanged. Enumeration's
+`ShAnalyzeMaxDepthError` separately describes its fixed command-structure budget.
+Resource refusal returns no silently truncated observation or inventory; the consumer
+decides how to respond.
 
 ## Release and validation
 

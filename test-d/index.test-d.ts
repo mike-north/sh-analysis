@@ -39,3 +39,17 @@ expectError(
     transparentWrappers: [{ names: ["retry"], skipAssignmentOperands: true }],
   }),
 );
+
+const copyCause = new RangeError("Maximum call stack size exceeded");
+const copyRefusal = new analysis.ShAnalyzeResourceError(
+  "brace-observation-copy",
+  copyCause,
+);
+expectAssignable<analysis.ShAnalysisError>(copyRefusal);
+expectType<"SH_ANALYSIS_RESOURCE">(copyRefusal.code);
+expectType<"brace-observation-copy">(copyRefusal.operation);
+expectType<RangeError>(copyRefusal.cause);
+// Only the documented copy operation is part of this resource-refusal contract.
+expectError(
+  new analysis.ShAnalyzeResourceError("enumerate-commands", copyCause),
+);

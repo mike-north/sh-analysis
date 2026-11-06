@@ -38,3 +38,29 @@ export class ShAnalyzeInvalidWrapperSpecError extends ShAnalysisError {
     this.name = "ShAnalyzeInvalidWrapperSpecError";
   }
 }
+
+/**
+ * An observed host resource failure prevented an analysis operation from completing.
+ * This reports the failing operation rather than imposing a fixed syntax-depth budget.
+ * The original stack-exhaustion error remains the standard cause; no partial observation
+ * or successful empty result is supplied. Unrelated host failures retain their own identity.
+ * @public
+ */
+export class ShAnalyzeResourceError extends ShAnalysisError {
+  /** Stable category for an analysis-owned observed resource refusal. @public */
+  readonly code = "SH_ANALYSIS_RESOURCE";
+  /** Analysis boundary at which the host refused work. @public */
+  readonly operation: "brace-observation-copy";
+  /** Original observed stack-exhaustion failure, preserved by identity. @public */
+  declare readonly cause: RangeError;
+
+  /** Retain the observed host failure without inventing a fixed acceptance depth. @public */
+  constructor(operation: "brace-observation-copy", cause: RangeError) {
+    super(
+      `${operation}: host stack exhausted while copying syntax for analysis; no observation was produced.`,
+      { cause },
+    );
+    this.name = "ShAnalyzeResourceError";
+    this.operation = operation;
+  }
+}

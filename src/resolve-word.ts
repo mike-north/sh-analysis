@@ -336,15 +336,19 @@ function resolvePart(
  * resolves to `"rm"`). A word containing any expansion (`ParamExp`,
  * `CmdSubst`, `ArithmExp`, `ProcSubst`), a triggering unquoted `~` (see
  * `options.context`), an unquoted glob metacharacter/bracket
- * expression/`ExtGlob`, potential brace expansion, a `$"..."` locale translation, or an unrepresentable
- * `$'\U...'` escape is `static: false` with a reason — never an error, and
- * never a safety judgment (see {@link WordResolution}).
+ * expression/`ExtGlob`, potential brace expansion, a `$"..."` locale translation,
+ * or an unrepresentable ANSI-C escape has a nonstatic resolution, never a safety
+ * judgment (see {@link WordResolution}). Failure to complete an observation is
+ * separate: host-copy resource refusal and binding failures propagate explicitly
+ * rather than becoming a word-resolution result.
  *
  * @param word - A `Word` node, e.g. `parseSync(...).Stmts[0].Cmd.Args[0]`.
  * @param options - See {@link ResolveWordOptions}.
  * @throws TypeError if `word.Type` is neither `"Word"` nor `"TypedNil"` — a programmer-error
- * misuse of the API, not a "malformed shell source" case (well-formed
- * shell source, however dynamic, never throws; see {@link WordResolution}).
+ * misuse of the API, not an unknown dynamic word value.
+ * @throws {@link ShAnalyzeResourceError} when the host exhausts its stack
+ * while copying a brace-observation input. This is not a fixed syntax-depth
+ * guarantee. Binding and unrelated host failures preserve their own categories.
  *
  * @public
  */

@@ -34,4 +34,5 @@ export {
   ShAnalysisError,
   ShAnalyzeInvalidWrapperSpecError,
   ShAnalyzeMaxDepthError,
+  ShAnalyzeResourceError,
 } from "./errors.js";
