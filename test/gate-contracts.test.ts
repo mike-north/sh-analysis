@@ -88,39 +88,95 @@ function gate(dir: string, name = "versions") {
     join(scripts, `check-${name}.${extension}`),
   ]);
 }
-/** An oracle copy gets a same-snapshot main ref solely for CLI status's unrelated eligibility check. */
+/** Compare manifests around real CLI preparation; no history eligibility or planner JSON is involved. */
 function oracle(t: TestContext, dir: string): Record<string, unknown>[] {
   const copy = fixture(t, null);
   rmSync(join(copy, ".changeset"), { recursive: true });
   for (const name of readdirSync(dir))
     if (name !== ".git" && name !== "node_modules")
       cpSync(join(dir, name), join(copy, name), { recursive: true });
-  commit(copy);
-  git(copy, "branch", "main");
-  const result = changeset(copy, "status", "--output", "plan.json");
-  assert.equal(result.status, 0, result.stdout + result.stderr);
-  const plan = object(
-    JSON.parse(readFileSync(join(copy, "plan.json"), "utf8")),
-  );
-  assert.ok(Array.isArray(plan.releases));
-  const releases = plan.releases.map((entry: unknown) => object(entry));
-  t.diagnostic(
-    `Changesets CLI 2.29.8 status oracle: ${JSON.stringify(releases)}`,
-  );
+  /** Discover fixture manifests before and after preparation, including workspace dependents. */
+  function manifests(directory: string): Map<string, unknown> {
+    const result = new Map<string, unknown>();
+    function visit(path: string): void {
+      for (const entry of readdirSync(path, { withFileTypes: true })) {
+        if ([".git", "node_modules"].includes(entry.name)) continue;
+        const child = join(path, entry.name);
+        if (entry.isDirectory()) visit(child);
+        else if (entry.name === "package.json") {
+          const manifest = object(JSON.parse(readFileSync(child, "utf8")));
+          if (typeof manifest.name === "string")
+            result.set(manifest.name, manifest.version);
+        }
+      }
+    }
+    visit(directory);
+    return result;
+  }
+  const before = manifests(copy);
   const prepared = changeset(copy, "version");
-  assert.equal(prepared.status, 0, prepared.stdout + prepared.stderr);
-  for (const entry of releases) {
-    const manifestPath =
-      entry.name === "fixture"
-        ? join(copy, "package.json")
-        : join(copy, "packages", String(entry.name), "package.json");
-    assert.equal(
-      object(JSON.parse(readFileSync(manifestPath, "utf8"))).version,
-      entry.newVersion,
+  // v3 refuses a declaration-free preparation before assembly, while the snapshot
+  // policy still permits it. Only this explicit no-work result is a valid oracle.
+  if (prepared.status !== 0) {
+    assert.equal(prepared.status, 1, prepared.stdout + prepared.stderr);
+    assert.match(
+      prepared.stdout + prepared.stderr,
+      /No unreleased changesets found/,
     );
   }
+  const releases = [...manifests(copy)].flatMap(([name, version]) =>
+    before.get(name) === version
+      ? []
+      : [{ name, oldVersion: before.get(name), newVersion: version }],
+  );
+  if (prepared.status !== 0) assert.deepEqual(releases, []);
+  // The adapter's complete public plan must agree with observed CLI preparation,
+  // including dependent releases and legitimate empty snapshots.
+  const snapshot = command(dir, process.execPath, [
+    "--experimental-strip-types",
+    "--input-type=module",
+    "-e",
+    `const { readReleasePlan } = await import(${JSON.stringify(pathToFileURL(join(scripts, "release-plan.ts")).href)}); console.log(JSON.stringify(await readReleasePlan(process.cwd())));`,
+  ]);
+  assert.equal(snapshot.status, 0, snapshot.stdout + snapshot.stderr);
+  const plan = object(JSON.parse(snapshot.stdout));
+  assert.ok(Array.isArray(plan.releases));
+  const planned = plan.releases.map((entry: unknown) => {
+    const release = object(entry);
+    return {
+      name: release.name,
+      oldVersion: release.oldVersion,
+      newVersion: release.newVersion,
+    };
+  });
+  assert.deepEqual(
+    planned.sort((left, right) =>
+      String(left.name).localeCompare(String(right.name)),
+    ),
+    releases.sort((left, right) => left.name.localeCompare(right.name)),
+  );
+  t.diagnostic(
+    `Changesets CLI 3.0.3 preparation oracle (exit ${String(prepared.status)}): ${JSON.stringify(releases)}`,
+  );
   return releases;
 }
+
+await test("release tooling pins the public Changesets v3 snapshot stack without a v2 helper", () => {
+  const dependencies = object(
+    object(JSON.parse(readFileSync(join(root, "package.json"), "utf8")))
+      .devDependencies,
+  );
+  for (const [name, version] of Object.entries({
+    "@changesets/cli": "3.0.3",
+    "@changesets/assemble-release-plan": "7.0.0",
+    "@changesets/config": "4.0.1",
+    "@changesets/read": "1.0.1",
+    "@changesets/pre": "3.0.0",
+    "@manypkg/get-packages": "3.1.0",
+  }))
+    assert.equal(dependencies[name], version, name);
+  assert.equal(dependencies["@changesets/get-release-plan"], undefined);
+});
 
 await test("CLI-generated empty changesets and prose major are intent-free", (t) => {
   const dir = fixture(t, null);
@@ -261,6 +317,10 @@ await test("real workspace dependent bumps are included in the ceiling", (t) => 
     join(dir, ".changeset/intent.md"),
     "---\ncore: minor\n---\nOutcome.\n",
   );
+  writeFileSync(
+    join(dir, "pnpm-workspace.yaml"),
+    "packages:\n  - packages/*\n",
+  );
   const plan = oracle(t, dir);
   assert.ok(
     plan.some((entry) => entry.name === "core" && entry.newVersion === "0.9.0"),
@@ -272,8 +332,8 @@ await test("real workspace dependent bumps are included in the ceiling", (t) => 
   );
   const result = gate(dir);
   assert.equal(result.status, 0, result.stdout + result.stderr);
-  // A peer dependent can cross the ceiling even though the requested package stays 0.x.
-  // No major declaration names this dependent; the real planner must discover the bump.
+  // v3 projects an out-of-range peer as a patch here; actual CLI preparation
+  // establishes that projection independently of the snapshot adapter.
   writeFileSync(
     join(dir, "packages/dependent/package.json"),
     JSON.stringify({
@@ -290,12 +350,11 @@ await test("real workspace dependent bumps are included in the ceiling", (t) => 
   );
   assert.ok(
     peerPlan.some(
-      (entry) => entry.name === "dependent" && entry.newVersion === "1.0.0",
+      (entry) => entry.name === "dependent" && entry.newVersion === "0.3.1",
     ),
   );
   const peerResult = gate(dir);
-  assert.notEqual(peerResult.status, 0);
-  assert.match(peerResult.stderr, /Changesets next version for dependent/);
+  assert.equal(peerResult.status, 0, peerResult.stdout + peerResult.stderr);
 });
 
 /** The contract accepts untrusted version fields and either returns or refuses authorization. */
@@ -367,4 +426,91 @@ await test("snapshot planning fails closed on real Changesets configuration and 
   const dir = fixture(t, null);
   writeFileSync(join(dir, ".changeset/config.json"), "{");
   assert.notEqual(gate(dir).status, 0);
+});
+
+await test("every planned version is inspected even after an allowed workspace release", (t) => {
+  const dir = fixture(t, null);
+  writeFileSync(
+    join(dir, "package.json"),
+    JSON.stringify({
+      name: "workspace",
+      private: true,
+      workspaces: ["packages/*"],
+    }),
+  );
+  for (const name of ["allowed", "blocked"]) {
+    mkdirSync(join(dir, "packages", name), { recursive: true });
+    writeFileSync(
+      join(dir, "packages", name, "package.json"),
+      JSON.stringify({ name, version: "0.8.0" }),
+    );
+  }
+  writeFileSync(
+    join(dir, "pnpm-workspace.yaml"),
+    "packages:\n  - packages/*\n",
+  );
+  writeFileSync(
+    join(dir, ".changeset/intent.md"),
+    "---\nallowed: patch\nblocked: major\n---\nOutcome.\n",
+  );
+  const prepared = oracle(t, dir);
+  assert.ok(
+    prepared.some(
+      (entry) => entry.name === "allowed" && entry.newVersion === "0.8.1",
+    ),
+  );
+  assert.ok(
+    prepared.some(
+      (entry) => entry.name === "blocked" && entry.newVersion === "1.0.0",
+    ),
+  );
+  const result = gate(dir);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Changesets next version for blocked/);
+});
+
+await test("valid JSON with invalid Changesets configuration fails closed without declarations", (t) => {
+  const dir = fixture(t, null);
+  const configPath = join(dir, ".changeset/config.json");
+  const config = object(JSON.parse(readFileSync(configPath, "utf8")));
+  writeFileSync(configPath, JSON.stringify({ ...config, access: "invalid" }));
+  const result = gate(dir);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /access/);
+});
+
+await test("real changeset read and planner errors fail closed", (t) => {
+  for (const declaration of [
+    "not frontmatter",
+    "---\nunknown-package: minor\n---\nOutcome.\n",
+  ]) {
+    const dir = fixture(t, null);
+    writeFileSync(join(dir, ".changeset/invalid.md"), declaration);
+    const result = gate(dir);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Cannot compute Changesets release plan/);
+  }
+});
+
+await test("snapshot planning needs neither committed history nor a main ref", (t) => {
+  const dir = fixture(t);
+  rmSync(join(dir, ".git"), { recursive: true });
+  git(dir, "init", "--initial-branch=topic");
+  assert.notEqual(command(dir, "git", ["rev-parse", "HEAD"]).status, 0);
+  assert.notEqual(
+    command(dir, "git", ["show-ref", "--verify", "refs/heads/main"]).status,
+    0,
+  );
+  assert.ok(oracle(t, dir).some((entry) => entry.newVersion === "0.9.0"));
+  const result = gate(dir);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+});
+
+await test("CLI prerelease entry without declarations has an empty snapshot plan", (t) => {
+  const dir = fixture(t, null);
+  const entered = changeset(dir, "pre", "enter", "rc");
+  assert.equal(entered.status, 0, entered.stdout + entered.stderr);
+  assert.deepEqual(oracle(t, dir), []);
+  const result = gate(dir);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
 });

@@ -316,3 +316,63 @@ unchanged. Detailed commands, red/green receipts, exact final head, independent
 review provenance, and remaining registry/CI/acceptance limits are recorded in
 scratch/gate-contracts-report.md. Local artifact checks do not establish registry
 installability, hosted CI, downstream composition, or lead acceptance.
+
+## 2026-11-06: public Changesets v3 preparation stack
+
+Successor work starts exactly at gate-contracts
+8e35f6d0599135cd83f6ca61042913faea4e56c3. Scope is release/contributor tooling
+and intended-outcome regressions only. Historical receipts above describe v2
+and remain unchanged. No other repository or ancestor worktree was edited.
+
+Tests preceded implementation: the v3 pin expectation fails against installed
+CLI2.29.8; the new manifest-observation oracle first passes the existing no-main,
+shallow and workspace outcomes against v2. After installing v3, real CLI version
+preparation disproves the old peer1.0.0 expectation: core0.8.0 minor prepares0.9.0
+and dependent0.3.0 prepares0.3.1 for both ordinary and peer dependencies. Accepted
+red receipts exclude missing-dependency and missing-workspace-marker setup errors.
+The removed v2-helper import failure is a migration incompatibility, not evidence
+of a release-policy defect. Source-string implementation tests were removed at
+lead request; behavior and pin metadata remain the regression contract.
+
+The snapshot adapter composes named public assembleReleasePlan7.0.0,
+readConfig4.0.1, readChangesets1.0.1, readPreState3.0.0 and package discovery3.1.0,
+matching installed CLI3.0.3 resolutions. It handles config validation results
+explicitly, exposes warnings, and propagates discovery/read/assembly failures to
+the fail-closed gate. No since-ref, file-presence shortcut, compatibility export,
+planner approximation or direct CLI status call remains in production or tests.
+Every actual planned version still passes the unchanged exact SemVer and major0
+assertion. README's old planner-package description is updated only for this
+necessary contributor-tooling correction.
+
+Fresh v3 regression evidence compares complete adapter plans with manifests
+before/after real installed CLI version preparation in own-Git copies, without a
+main-ref eligibility workaround. The CLI's explicit no-unreleased-changesets exit1
+is accepted only with unchanged manifests; other CLI failures fail the oracle.
+Coverage includes unborn history/no main, shallow detached minor/major/empty,
+consumed ordinary preparation and empty next plan, pre enter/exit with no intent,
+pending major at pre exit from current0.x, consumed prerelease/stable exit,
+ordinary and peer bumps, and two-package plans containing an allowed bump and a
+blocked next1.0.0. Exact CLI add --empty bytes and prose-major controls, strict
+SemVer controls, invalid JSON and valid-JSON configuration errors, malformed
+changeset reads and unknown-package assembly errors remain covered.
+
+Node22.22.1/pnpm11.12 build, aggregate check, full test and both release gates pass
+against the verified prospective binding. Full test passes48 contract/tooling cases,
+814 analysis cases (Vitest maxWorkers2), and tsd. Clean isolated aggregate baseline
+passes; analysis, imported test-d and unimported test-d helper injections all fail
+with implicit-any diagnostics. No strictness directive or negative assertion was
+weakened. Installed binding matches all78 tarball members and the authorized SHA256.
+
+Manifest remains sh-ast ^0.11.0. Ordinary lock retains honest resolved v3 tooling,
+removes v2 planner/helper resolutions, and contains no binding resolution or local
+path. Fresh frozen/offline install fails only for the absent binding importer;
+fresh registry query finds no0.11.0. Environment-only
+pnpm_config_verify_deps_before_run=false enables prospective local checks, not
+registry proof. Source, API report, generated docs, historical validation, AGENTS,
+CLAUDE, configs, intent/SemVer policy and manual OIDC workflows are byte-identical
+to base. No push, GitHub write, tag, integration, dispatch, actual publication,
+credential-file read, Claude session or sub-worker launch occurred.
+
+Detailed fresh receipts, final head, matrix outcomes, independent review provenance
+and remaining hosted/frozen/acceptance limits are in scratch/changesets-v3-report.md.
+Lead owns independent exact-head checks, acceptance and merge.
