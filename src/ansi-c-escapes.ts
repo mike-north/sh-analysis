@@ -57,9 +57,9 @@ function isOctalDigit(ch: string): boolean {
  * Instead, {@link decodeAnsiCString} reports a non-scalar
  * `\u`/`\U` as *unrepresentable* via {@link AnsiCDecodeResult}, and
  * `resolveWord` propagates that as `{ static: false, reason: 'unsupported' }`
- * for the whole word — never `String.fromCodePoint`, which throws
- * `RangeError` for any value over this limit and would violate
- * `resolveWord`'s "never throw for well-formed input" contract.
+ * for the whole word. Completed classification does not pass a non-scalar to
+ * `String.fromCodePoint` and fabricate a semantic `RangeError`. Operational
+ * observation failures, including copy and binding refusals, still propagate.
  *
  * @see https://www.gnu.org/software/bash/manual/bash.html#ANSI_002dC-Quoting
  */
@@ -160,11 +160,10 @@ export type AnsiCDecodeResult =
  * `\uHHHH` (one to four digits) and `\UHHHHHHHH` (one to eight digits), and
  * control-character `\cX`. An unrecognized backslash sequence (not in this
  * table, and not a recognized numeric escape) is left as-is — Bash's own
- * decoding is best-effort for malformed input, and this function mirrors
- * that rather than throwing, matching {@link resolveWord}'s "never throw
- * for well-formed input" contract at the string level too. A `\u`/`\U`
- * whose value *is* well-formed but has no corresponding Unicode character
- * is a different case — see {@link AnsiCDecodeResult}.
+ * decoding is best-effort for malformed input, so unknown escapes remain
+ * literal. A recognized non-scalar Unicode escape instead completes as
+ * unsupported classification — see {@link AnsiCDecodeResult}. These semantic
+ * outcomes do not suppress operational observation failures, which still propagate.
  *
  * @internal
  */
