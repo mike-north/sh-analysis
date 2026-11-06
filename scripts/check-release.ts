@@ -2,7 +2,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import getReleasePlan from "@changesets/get-release-plan";
+import { readReleasePlan } from "./release-plan.ts";
 import {
   assertRelease,
   assertZeroVersion,
@@ -31,12 +31,12 @@ export async function checkVersions(root = process.cwd()): Promise<void> {
   }
   visit(root);
   // Plan the complete working snapshot, even when it contains no pending declarations.
-  // The public API is the planner used by the pinned CLI, without status's separate
-  // Git-diff/missing-changeset eligibility policy. Prerelease exit and dependent bumps
+  // The adapter composes the public APIs used by the pinned CLI's preparation,
+  // without Git-diff/missing-changeset eligibility policy. Prerelease exit and dependent bumps
   // remain planner responsibilities; neither absent history nor an empty plan is an error.
-  let plan: Awaited<ReturnType<typeof getReleasePlan>>;
+  let plan: Awaited<ReturnType<typeof readReleasePlan>>;
   try {
-    plan = await getReleasePlan(root);
+    plan = await readReleasePlan(root);
   } catch (cause) {
     throw new Error(
       `Cannot compute Changesets release plan. ${stabilityPolicy}`,

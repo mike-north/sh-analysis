@@ -60,8 +60,9 @@ run `pnpm version:prepare` and commit the resulting versions and `CHANGELOG.md`
 before dispatching Release with the exact prepared version. Preparation never
 publishes. Both CI and Release reject major changesets and public current or
 planned versions outside 0.x. The version gate always plans the complete working
-snapshot with pinned `@changesets/get-release-plan`, the public planner used by
-the installed Changesets CLI; it does not enforce Git-diff or missing-changeset
+snapshot with the pinned Changesets v3 public stack (package discovery, validated config,
+changeset and prerelease readers, and `assembleReleasePlan`), matching the installed
+CLI version preparation; it does not enforce Git-diff or missing-changeset
 eligibility. Empty plans are valid, including prepared version commits. Current
 and planned versions must be exact, unprefixed SemVer (validated by pinned
 `semver`); numeric prerelease identifiers cannot have leading zeros, while build

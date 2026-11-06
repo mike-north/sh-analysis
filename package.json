@@ -46,9 +46,13 @@
     "check:test-types": "tsc -p tsconfig.test.json"
   },
   "devDependencies": {
-    "@changesets/cli": "2.29.8",
-    "@changesets/get-release-plan": "4.0.16",
+    "@changesets/assemble-release-plan": "7.0.0",
+    "@changesets/cli": "3.0.3",
+    "@changesets/config": "4.0.1",
+    "@changesets/pre": "3.0.0",
+    "@changesets/read": "1.0.1",
     "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
+    "@manypkg/get-packages": "3.1.0",
     "@microsoft/api-documenter": "7.30.7",
     "@microsoft/api-extractor": "7.58.9",
     "@types/node": "22.19.0",
