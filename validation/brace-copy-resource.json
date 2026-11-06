@@ -1,17 +1,17 @@
 {
   "purpose": "Replacement ordinary unpublished sh-analysis0.1.0 after analysis-owned observation-copy refusal correction; no registry publication claim",
   "analysis": {
-    "packageRelevantSourceHead": "c50b5b61350a0810af3f4da3d18c7efaa856dff9",
+    "packageRelevantSourceHead": "d5106ca938d5bee315b680ea9832dca1df4e8dfb",
     "version": "0.1.0",
     "versionMetadataRewritten": false,
     "tarball": "sh-analysis-0.1.0.tgz",
-    "tarballSha256": "96adedee31d43950c1c55ca9835361d7b337319046af56ca2e6bc18059d5cee5",
+    "tarballSha256": "a7656b95e51fc4ace34c33f655ce2148f598947d4ed9f71d4efcca41718df972",
     "membersMatchCurrentBuiltFiles": true,
     "installedMembersMatchTarball": true,
     "memberCount": 23,
     "assets": {
       "LICENSE": "743b7d3b00806b36eb2709b92947699778bf5f397a41edef46f9a3578fd88cd4",
-      "dist/ansi-c-escapes.js": "d82b52f4c759091916bcbdede2c1df72ca93eacd94a285163a5b595800051c18",
+      "dist/ansi-c-escapes.js": "04f5bca53a53bf09f44cc106ee62b7bdea7c7cf3d9936510f175545625311fb2",
       "dist/brace-observation.js": "1859be6f1448b8116a578a5d9173860a9c21097506d73315479ed045309a25a5",
       "dist/decode-lit.js": "0f1a65ecd7eb1b8b933488ae6ea825a1a1e6575784fb7abca63c13d258ec30bc",
       "dist/deep-freeze.js": "289f7f166dd8701fc6da46956a3d5f77c3fef07957cea2e4eee4ec42e6a4a3d9",
@@ -23,7 +23,7 @@
       "dist/resolve-word.js": "6cda661daa691457e587e4fbe8a103fd6a674d5ae7786ec0ecfb582d059ac056",
       "package.json": "ac1e1e61e54b210d9cc810ef9b48c7c21e8f1c1c903d12c5e1eef6dad43217b5",
       "README.md": "7392a913e3330b791feef817fd7747c061894664f7e67adfa7a8984e295c0e4b",
-      "dist/ansi-c-escapes.d.ts": "05824315b52caf6ae1bcf964773733d7c33cfc179eb5fb36ad7548681002c21b",
+      "dist/ansi-c-escapes.d.ts": "064bc1c7ee5255a4e3afc069e45b9fa8969fb875751ab214ca25a8c447186d50",
       "dist/brace-observation.d.ts": "98ee90766839e6a78c90181fa740f2a9b8db697e8f3e825ce647ef62b6d4a79d",
       "dist/decode-lit.d.ts": "97ee6171fc5081f8b04f16be97af8246fa3290468651df896344f43025b988ee",
       "dist/deep-freeze.d.ts": "11f907365d50d73b55d8412d37cb39c781d9e531810a9f2a57f3ca5ed9d59d24",
@@ -119,5 +119,12 @@
   "rawValidation": "external handoff raw-validation.json",
   "resolutionPolicy": "Committed manifest retains sh-ast^0.11.0 and ordinary unresolved lock; local artifact install and process-local pnpm_config_verify_deps_before_run=false are not committed runtime resolutions/overrides.",
   "releaseGate": "Real sh-ast0.11 registry publication, ordinary lock refresh, hosted CI and root acceptance remain pending. No merge, dispatch, publication, OIDC exchange or registry mutation.",
-  "supersedes": "Old analysis artifact3699fd2a and validation/final-composition.json remain historical; use this corrected copy-boundary package."
+  "supersedes": "Old3699and96ad analysis artifacts are historical; current a765 includes the same corrected copy-boundary behavior plus the operational-failure documentation correction.",
+  "commentOnlyRefreshFromC50": {
+    "changedMembers": [
+      "package/dist/ansi-c-escapes.js",
+      "package/dist/ansi-c-escapes.d.ts"
+    ],
+    "runtimeAndDeclarationAstEqualWithoutComments": true
+  }
 }
