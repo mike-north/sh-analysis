@@ -109,3 +109,143 @@ Full wrapper-validation gates pass on both Node 22.22.1 and 24.14.0 using latest
 Final wrapper artifact is /tmp/sh-analysis-wrapper-final-w_l82pik/sh-analysis-0.1.0.tgz, SHA2566e8340b65ef6f5eb7591f246cf78758cd2243d4b663da0bb56f5e0419d2a6149. Package-relevant source b74d3b24942daa8f1055354e5bba15d5ce4eb700; ordinary stable0.1 with no metadata rewrite. Both runtime fresh importers reject19 malformed configurations with own error and preserve six valid controls; actual public binding module identity matches. All23 analysis/currentbuild/installed members match; all78 final core installed members match. Compared to a765, only resolve-argv0.js and.d.ts change; declaration AST without comments is unchanged, proving no public type expansion. Latest core8e original/prospective differ only version metadata; compared to66c only packaged README changes. Receipt validation/wrapper-validation.json and external receipt.json/raw-validation.json/declaration-equivalence.json/draft-review-replies.md in the artifact directory.
 
 Root's independent reviewer separately verified actual6e package against ownb74 build/all23installed members, core8e/all78members,30bad configs+default/empty/frozen/repeatedalias controls on both runtimes, existing copyresource3xperNode/8013unchanged+reuse, coreoutput8xperNode/cold contracts; no new finding. Awaiting evidence-only finalhead readback to close report. Root says new core history sync has an identical entire tree to15797e7, so no analysis source churn. This final record commit also cleans work-record-only heredoc formatting from the source commit; packaged source unchanged. Root owns reply/resolution and release authority. Lock thread4489868945 remains open, hosted frozen lock gate real; no review requests, merge, dispatch, publication, fake integrity/local resolution or overrides.
+
+## 2026-11-06: owner-controlled 0.x release boundary
+
+Scope: local implementation on release-gate-0x only; no pushes, GitHub writes,
+publication, tags, or merges. Keep manual dispatch, exact prepared release input,
+trusted publishing, and placeholder rejection.
+
+Added intended-outcome gate tests before implementation. Initial gate suite failed
+because the Changesets configuration, gate commands, and CI workflow were absent.
+Tests cover major declarations (including nested/scoped/unknown package names),
+public current 1.x and future-major prereleases, nested public/private manifests,
+actual Changesets next-version rejection, 0.x/minor acceptance, generated version
+and CHANGELOG.md, invalid input, no pending changesets, release entry enforcement,
+and workflow ordering. Additional red evidence caught missing CI base-ref setup
+and an incorrectly broad README suffix exclusion; both were corrected.
+
+G1 parses changeset frontmatter using the existing YAML dependency. G2 extends
+scripts/check-release.mjs, recursively checking repository manifests independently
+of Changesets package selection and reading the pinned CLI's actual release plan.
+Only installed dependencies and Git metadata are excluded. No pending changesets
+and no prerelease state means no next release; do not apply Changesets' separate
+missing-changeset policy to tooling-only commits or prepared releases. Temporary
+plan output and fixtures remain in the worktree and are cleaned up. Policy failures
+state that the owner controls stability and there is no override flag.
+
+Added pinned @changesets/cli 2.29.8, main-based configuration, and version:prepare
+for gated version/changelog preparation. Tooling-only work requires no package bump;
+this change intentionally preserves 0.0.0-stage and adds no package changeset.
+CI explicitly runs both gates for every pull request and push to main, providing
+the main ref needed by Changesets. Release repeats both gates through its existing
+check:release command before npm pack/publish; authorization/authentication are
+unchanged. No plugin manifest is published by this repository.
+
+Local verification: Node 22.22.1, pnpm 11.12.0; frozen install, build, check,
+check:changesets, check:versions, all 13 tests, and Prettier checks passed.
+The repository defines no separate lint task; check is TypeScript validation and
+Prettier validates formatting. Gate test command:
+`node --test test/release-gates.test.mjs`.
+No actual publish/tag command or remote CI run was performed.
+
+## 2026-11-06: strict TypeScript tooling and API review
+
+Added intended-outcome tests first: the initial run failed for missing ESLint
+configuration, type-check command, and approved API report. A separate migration
+contract failed against inherited JavaScript release commands before their
+TypeScript migration. Tests now exercise all TypeScript extensions in source and
+tests, unsafe values, directive explanations and usage, unknown narrowing, and an
+unapproved public export without rewriting the committed report.
+
+Added type-aware flat ESLint, explicit noImplicitAny in both compiler configs,
+pinned API Extractor/Documenter with committed reports and Markdown, Knip, and
+single-manifest syncpack validation. CI's existing check command includes all
+validation lanes. Preserved the lead's amended responsibility map verbatim and
+linked CLAUDE.md to AGENTS.md; no boundary contradictions were found.
+
+At the lead's explicit scope expansion, migrated all inherited release scripts
+and tests to TypeScript, validating unknown JSON/YAML values without suppressions.
+Native type stripping is explicit for the declared Node 22 minimum; release
+fixtures live under temp because Node rejects stripping inside node_modules.
+Tooling tests use isolated temporary projects. All 13 original release contracts,
+Changesets preparation, the no-override 0.x ceiling, and manual OIDC workflow are
+preserved. No product source or release workflow changed; no authored JavaScript
+remains. Intentional any spellings occur only in lint-test fixture strings.
+
+Local verification on Node 22.22.1/pnpm 11.12.0: frozen install, build, build:docs,
+check (types/lint/API/Knip/syncpack), check:changesets, check:versions, and all 17
+tests passed. No push, GitHub write, merge, tag, or actual publication occurred.
+Full handoff evidence and exact committed head are recorded in scratch reports.
+Supplemental Node 24.14.0 verification passed both gates and all 13 release tests.
+Generated documentation uses installed Prettier in build:docs; Extractor reports
+use its schema-supported LF setting. Affected generation/API checks passed after
+this formatting alignment; generated whitespace does not require weaker hooks.
+
+## 2026-11-06: extraction reconciled with strict contributor tooling
+
+Worker scope is extraction-tooling only, starting extraction abdada6 and rebasing
+its twelve commits from shared scaffold 6f84972 onto approved exact tooling head
+3d7514eed58cfa2a74d49e6d96266b0a72e0cefb. Neither extraction/main/origin branches
+nor other worktrees were rewritten. No pushes, GitHub writes, tags, publication,
+main merges, Claude sessions or credential access are authorized or performed.
+The lead retains acceptance. Rebase produced 74695cd5d9b8be18aeb741d1b2dac2a4fabbc840
+before reconciliation changes. Overlaps: package/lock/config in the test commit,
+README and this record in the source commit; release workflow and release tests
+automerged and were inspected and corrected. All historical validation files
+remain byte-identical to abdada6.
+
+Retained all analysis observations and public types, hard breaks, Node22/pnpm11.12,
+exactOptionalPropertyTypes and noEmitOnError. The strict shared config checks
+source/tests/config/scripts; build emits sources only. tsd has its own checking
+context because its negative declarations intentionally fail ordinary tsc.
+Contract tests and both cold-process fixtures are TypeScript, with native type
+stripping and no JavaScript forwarding files. JSON/YAML test receipts are
+validated as unknown at their boundaries. Negative runtime tests retain malformed
+inputs using narrow assertions with specific directive explanations; no unchecked
+any or broad lint exemptions were added. Removed an unsafe structural index cast
+from deepFreeze using Reflect.get with an unknown result. The wrapper default
+ternary remains unchanged: null must fail validation, whereas undefined selects
+defaults. No product API decision or behavior correction was required.
+
+Both inherited Changesets/0.x gates, strict ESLint, syncpack, Knip, API Extractor,
+Documenter, formatting, packaging and tsd checks remain connected. The package
+scripts run all contract tests and 814 analysis tests with Vitest workers=2.
+Corrected the automerged release test to use the checked YAML helper; retained
+manual/OIDC publishing permissions and extraction's disabled release setup cache.
+Generated the API report and Markdown for the actual analysis exports, replacing
+the empty scaffold. The responsibility section, including the lead clarification,
+is copied verbatim from the canonical source path supplied in this session;
+Prettier continues to exclude AGENTS.md.
+
+Tests-first direct red evidence: scratch/reconciliation-red.log records both
+integration outcome failures (JavaScript contract tools and empty API report).
+scratch/package-fixture-red.log separately rejects the embedded JavaScript smoke
+program before moving it to a checked TypeScript fixture. Initial type/lint
+receipts record the merge defects and inherited test assertion issues before fixes.
+Historical analysis red/green receipts above remain inherited evidence, not new
+claims about this reconciled head.
+
+Direct registry query: npm view sh-ast@0.11.0 against registry.npmjs.org returned
+E404; pnpm independently found no matching version. The initial frozen install
+failed on three stale/missing specifiers, which is NOT a registry-resolution test.
+Refreshed every available development dependency honestly. The final ordinary
+lockfile has no local binding path, invented registry integrity or override; frozen
+install now fails ONLY because sh-ast ^0.11.0 remains absent from its importer.
+The manifest range is unchanged. Local checks use the existing prospective
+/tmp/sh-ast-final-checksum-523033-bw_zkyw3/sh-ast-0.11.0.tgz,
+SHA256 8e0f057f91ca6aee91f619c947985d9e29e809abfec82bfae8b487c53c748532.
+Its advertised 0.11.0 metadata is prospective and is not a registry release.
+The local install temporarily used that file dependency; the committed manifest
+was immediately restored and the ordinary lock reconciled without its resolution.
+Commands use pnpm_config_verify_deps_before_run=false only in the local process
+environment, preserving the honest unavailable-registry boundary.
+
+Local Node22.22.1/pnpm11.12 build, complete check, check:changesets and
+check:versions pass. Full validation and final exact head, reproducible commands,
+API review considerations, dependency limitations and remaining acceptance are
+recorded separately in scratch/extraction-tooling-report.md. The generated report
+requires lead review; a local green run does not establish registry installability,
+hosted CI, downstream ESLint composition or release acceptance. No actual publish
+was run. Do not interpret historical Node24 or downstream composition receipts as
+new exact-head evidence.

@@ -165,6 +165,7 @@ describe("custom interpreter boundary grammar", () => {
     { ...spec, optionalOperandOptions: ["x"] },
   ])("rejects invalid interpreter table entries: %j", (entry) => {
     expect(() =>
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Deliberately malformed JavaScript input must reach runtime validation despite the stricter public TypeScript contract.
       resolve("bash -c x", { embeddedCommandInterpreters: [entry as never] }),
     ).toThrow(ShAnalyzeInvalidWrapperSpecError);
   });
@@ -275,6 +276,7 @@ describe("Bash long-option aliases and dynamic operands", () => {
     for (const table of tables) {
       // Malformed JavaScript inputs deliberately bypass the public type.
       expect(() =>
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Deliberately malformed JavaScript input must reach runtime validation despite the stricter public TypeScript contract.
         resolve("bash -c x", { embeddedCommandInterpreters: table as never }),
       ).toThrow(ShAnalyzeInvalidWrapperSpecError);
     }
@@ -298,6 +300,7 @@ describe("Bash long-option aliases and dynamic operands", () => {
       [field]: new Array<unknown>(1),
     };
     expect(() =>
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Deliberately malformed JavaScript input must reach runtime validation despite the stricter public TypeScript contract.
       resolve("bash -c x", { embeddedCommandInterpreters: [entry as never] }),
     ).toThrow(ShAnalyzeInvalidWrapperSpecError);
   });

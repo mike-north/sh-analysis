@@ -51,3 +51,34 @@ Publication uses manual dispatch of `.github/workflows/release.yml` on main,
 an exact prepared stable 0.x version, and npm trusted publishing without an
 environment. The GitHub repository remains private. Ordinary validation has no
 publication permission. No long-lived npm token is used.
+
+## Contributor tooling
+
+Version and changelog preparation uses Changesets. Add a changeset with
+`pnpm exec changeset` for package changes (tooling-only changes need none), then
+run `pnpm version:prepare` and commit the resulting versions and `CHANGELOG.md`
+before dispatching Release with the exact prepared version. Preparation never
+publishes. Both CI and Release reject major changesets and public current or
+planned versions outside 0.x. This project stays in the 0.x series until the owner
+declares the shape stable; there is no override flag.
+
+TypeScript tooling covers all authored `.ts`, `.tsx`, `.mts`, and `.cts` files,
+including tests and the TypeScript ESLint configuration. ESLint loads its config
+through Jiti; Node runs release scripts and package contract tests with native type stripping,
+explicitly enabled for compatibility with the declared Node 22.14 minimum.
+`tsconfig.json` owns strict type checking for source, scripts, config, and tests;
+`tsconfig.build.json` emits only package sources into `dist/`. Explicit and implicit
+`any` and unsafe uses are rejected. An exceptional ESLint suppression must explain
+on that same directive why the type is appropriate; unused suppressions fail lint.
+
+After `pnpm build`, run `pnpm check` for types, type-aware ESLint, API report review,
+Knip, and dependency consistency. Individual commands are `pnpm check:lint-ts`,
+`pnpm check:api-report`, and `pnpm check:syncpack` (`syncpack lint`). Syncpack checks
+the single package manifest while respecting its existing dependency ranges.
+
+The public entry point exports the extracted analysis operations, observations, defaults and independent errors.
+[Generated API documentation](docs/api/index.md) and the approved
+[API report](api-report/sh-analysis.api.md) are committed. Run `pnpm build` then
+`pnpm build:docs` after an intentional public API change and review both outputs.
+CI runs API Extractor without `--local`, so unapproved API changes fail instead of
+rewriting the approved report. Generated intermediate models belong in `temp/`.

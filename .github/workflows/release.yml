@@ -31,6 +31,7 @@ jobs:
       - run: pnpm build
       - run: pnpm check
       - run: pnpm test
+      # Recheck declarations, all current/planned versions, and the exact dispatch identity before publication.
       - run: pnpm check:release
         env:
           RELEASE_VERSION: ${{ inputs.version }}
