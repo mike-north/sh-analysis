@@ -3,15 +3,17 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { object, objects } from "./support.ts";
 
-test("a valid deep Word has a known typed refusal without mutation or poisoning reuse", () => {
+void test("a valid deep Word has a known typed refusal without mutation or poisoning reuse", () => {
   const environment = { ...process.env };
   delete environment.NODE_OPTIONS;
   const result = spawnSync(
     process.execPath,
     [
+      "--experimental-strip-types",
       fileURLToPath(
-        new URL("./fixtures/brace-copy-resource-child.mjs", import.meta.url),
+        new URL("./fixtures/brace-copy-resource-child.ts", import.meta.url),
       ),
     ],
     {
@@ -22,9 +24,10 @@ test("a valid deep Word has a known typed refusal without mutation or poisoning 
   );
   assert.equal(result.error, undefined);
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
-  const observed = JSON.parse(result.stdout);
-  assert.equal(observed.attempts.length, 3);
-  for (const attempt of observed.attempts) {
+  const observed = object(JSON.parse(result.stdout));
+  const attempts = objects(observed.attempts);
+  assert.equal(attempts.length, 3);
+  for (const attempt of attempts) {
     if (attempt.stage === "analysis-copy") {
       assert.equal(attempt.name, "ShAnalyzeResourceError");
       assert.equal(attempt.code, "SH_ANALYSIS_RESOURCE");
@@ -40,7 +43,10 @@ test("a valid deep Word has a known typed refusal without mutation or poisoning 
         "SplitBraces input record depth 257 exceeds the bridge transport limit 256",
       );
     }
-    assert.ok(attempt.recordsUnchanged >= 8000);
+    assert.ok(
+      typeof attempt.recordsUnchanged === "number" &&
+        attempt.recordsUnchanged >= 8000,
+    );
     assert.equal(attempt.reused, true);
   }
 });

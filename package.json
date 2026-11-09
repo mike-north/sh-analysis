@@ -9,7 +9,7 @@
     "url": "git+https://github.com/mike-north/sh-analysis.git"
   },
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=22.14.0"
   },
   "packageManager": "pnpm@11.12.0",
   "exports": {
@@ -24,29 +24,49 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "check": "pnpm check:typecheck && pnpm check:test-types && pnpm check:format",
+    "build": "tsc -p tsconfig.build.json",
+    "check": "concurrently --success all --names types,lint,api,knip,syncpack \"pnpm check:typecheck\" \"pnpm check:lint-ts\" \"pnpm check:api-report\" \"pnpm check:knip\" \"pnpm check:syncpack\" && pnpm check:test-types && pnpm check:format",
     "test": "pnpm test:contracts && pnpm test:analysis && pnpm test:types",
-    "check:release": "node scripts/check-release.mjs",
-    "test:contracts": "node --test test/*.test.mjs",
-    "test:analysis": "vitest run",
+    "check:release": "node --experimental-strip-types scripts/check-release.ts",
+    "check:changesets": "node --experimental-strip-types scripts/check-changesets.ts",
+    "check:versions": "node --experimental-strip-types scripts/check-versions.ts",
+    "version:prepare": "pnpm check:changesets && pnpm check:versions && changeset version && pnpm check:versions",
+    "check:typecheck": "tsc -p tsconfig.json --noEmit",
+    "check:lint-ts": "eslint . --max-warnings 0",
+    "check:api-report": "api-extractor run",
+    "check:knip": "knip",
+    "check:syncpack": "syncpack lint",
+    "build:docs": "api-extractor run --local && api-documenter markdown -i temp -o docs/api && prettier --write docs/api",
+    "fix:lint-ts": "eslint . --fix",
+    "fix:format": "prettier --write .",
+    "test:contracts": "node --experimental-strip-types --test test/*.test.ts",
+    "test:analysis": "vitest run --maxWorkers=2",
     "test:types": "tsd",
     "check:format": "prettier --check .",
-    "fix:format": "prettier --write .",
-    "check:typecheck": "tsc -p tsconfig.json --noEmit",
     "check:test-types": "tsc -p tsconfig.test.json"
   },
   "devDependencies": {
-    "@types/node": "^24.19.2",
+    "@changesets/cli": "2.29.8",
+    "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
+    "@microsoft/api-documenter": "7.30.7",
+    "@microsoft/api-extractor": "7.58.9",
+    "@types/node": "22.19.0",
+    "concurrently": "10.0.3",
+    "eslint": "9.39.5",
+    "eslint-config-prettier": "10.1.8",
+    "jiti": "2.6.1",
+    "knip": "6.26.0",
     "prettier": "^3.9.10",
-    "tsd": "^0.33.0",
+    "syncpack": "15.3.2",
     "typescript": "~5.9.3",
-    "vitest": "^4.1.12",
-    "yaml": "^2.8.1"
+    "typescript-eslint": "8.64.0",
+    "yaml": "^2.8.1",
+    "tsd": "^0.33.0",
+    "vitest": "^4.1.12"
   },
-  "types": "./dist/index.d.ts",
-  "author": "Mike North <michael.l.north@gmail.com>",
   "dependencies": {
     "sh-ast": "^0.11.0"
-  }
+  },
+  "types": "./dist/index.d.ts",
+  "author": "Mike North <michael.l.north@gmail.com>"
 }

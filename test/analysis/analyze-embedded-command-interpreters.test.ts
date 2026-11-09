@@ -442,6 +442,7 @@ describe("interpreter -c — table and overrides", () => {
     for (const entry of bad) {
       expect(() =>
         resolveArgv0(site("ls"), {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Deliberately malformed JavaScript input must reach runtime validation despite the stricter public TypeScript contract.
           embeddedCommandInterpreters: [entry as never],
         }),
       ).toThrow(ShAnalyzeInvalidWrapperSpecError);

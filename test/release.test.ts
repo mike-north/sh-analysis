@@ -1,9 +1,14 @@
 /** Release tests assert authorization and artifact outcomes independently of workflow execution. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { assertRelease } from "../scripts/release-contract.mjs";
+import { assertRelease } from "../scripts/release-contract.ts";
 import test from "node:test";
-import { parse } from "yaml";
+import {
+  object,
+  objects,
+  workflow as readWorkflow,
+  type IWorkflow,
+} from "./support.ts";
 
 const repository = "mike-north/sh-analysis";
 const approved = {
@@ -31,7 +36,7 @@ function guard(packageOverride = {}, environmentOverride = {}) {
   }
 }
 
-test("release accepts only the explicitly selected main-branch package version", () => {
+await test("release accepts only the explicitly selected main-branch package version", () => {
   assert.equal(guard().status, 0);
   for (const environment of [
     { GITHUB_EVENT_NAME: "push" },
@@ -48,7 +53,7 @@ test("release accepts only the explicitly selected main-branch package version",
     );
 });
 
-test("release refuses placeholders, non-0.x versions and incorrect package identities", () => {
+await test("release refuses placeholders, non-0.x versions and incorrect package identities", () => {
   for (const version of [
     "0.0.0-stage",
     "0.0.0",
@@ -71,8 +76,10 @@ test("release refuses placeholders, non-0.x versions and incorrect package ident
   );
 });
 
-test("workflow is manual-only and scopes OIDC to a GitHub-hosted publication job", () => {
-  const workflow = parse(readFileSync(".github/workflows/release.yml", "utf8"));
+await test("workflow is manual-only and scopes OIDC to a GitHub-hosted publication job", () => {
+  const workflow = readWorkflow(
+    readFileSync(".github/workflows/release.yml", "utf8"),
+  );
   assert.deepEqual(Object.keys(workflow.on), ["workflow_dispatch"]);
   assert.deepEqual(workflow.permissions, { contents: "read" });
   assert.equal(workflow.jobs.publish["runs-on"], "ubuntu-latest");
@@ -88,7 +95,7 @@ test("workflow is manual-only and scopes OIDC to a GitHub-hosted publication job
   const guardStep = workflow.jobs.publish.steps.find(
     (step) => step.run === "pnpm check:release",
   );
-  assert.equal(guardStep?.env?.RELEASE_VERSION, "${{ inputs.version }}");
+  assert.equal(guardStep?.env.RELEASE_VERSION, "${{ inputs.version }}");
   assert.equal(stepsCacheDisabled(workflow), true);
   const source = readFileSync(".github/workflows/release.yml", "utf8");
   assert.doesNotMatch(source, /NPM_TOKEN|NODE_AUTH_TOKEN|--provenance/);
@@ -120,14 +127,18 @@ test("workflow is manual-only and scopes OIDC to a GitHub-hosted publication job
   );
 });
 
-test("release package contains executable and declaration entry points from a real build", async () => {
+await test("release package contains executable and declaration entry points from a real build", async () => {
   const { spawnSync } = await import("node:child_process");
   const result = spawnSync("npm", ["pack", "--dry-run", "--json"], {
     encoding: "utf8",
   });
   assert.equal(result.status, 0, result.stderr);
-  const [pack] = JSON.parse(result.stdout);
-  const files = pack.files.map((file) => file.path);
+  const [pack] = objects(JSON.parse(result.stdout));
+  assert.ok(pack);
+  const files = objects(pack.files).map((file) => {
+    assert.ok(typeof file.path === "string");
+    return file.path;
+  });
   for (const path of [
     "dist/index.js",
     "dist/index.d.ts",
@@ -145,22 +156,24 @@ test("release package contains executable and declaration entry points from a re
 });
 
 /** Publishing must install from the checked-in lock rather than restored caches. */
-function stepsCacheDisabled(workflow) {
+function stepsCacheDisabled(workflow: IWorkflow) {
   const setup = workflow.jobs.publish.steps.find(
     (step) => step.uses === "actions/setup-node@v4",
   );
   return (
-    setup?.with?.["package-manager-cache"] === false &&
+    setup?.with["package-manager-cache"] === false &&
     setup.with.cache === undefined
   );
 }
 
-test("ordinary validation runs on pull requests without publication authority", () => {
-  const workflow = parse(readFileSync(".github/workflows/check.yml", "utf8"));
+void test("ordinary validation runs on pull requests without publication authority", () => {
+  const workflow = readWorkflow(
+    readFileSync(".github/workflows/check.yml", "utf8"),
+  );
   assert.ok(workflow.on.pull_request);
   assert.deepEqual(workflow.permissions, { contents: "read" });
   for (const job of Object.values(workflow.jobs)) {
-    assert.equal(job.permissions?.["id-token"], undefined);
+    assert.equal(object(job.permissions ?? {})["id-token"], undefined);
     assert.doesNotMatch(JSON.stringify(job), /npm publish/);
   }
   const commands = workflow.jobs.validate.steps

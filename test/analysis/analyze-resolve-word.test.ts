@@ -642,6 +642,7 @@ describe("resolveWord — synthetic-input edge cases (not producible by this bri
     // silently mis-resolving as static.
     const word = syntheticNode("Word", {
       Parts: [
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- This synthetic future node deliberately violates the current union to verify conservative fallback.
         {
           Type: "SomeFutureNodeTypeThisModuleDoesNotKnowAbout",
         } as unknown as WordPart,
