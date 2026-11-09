@@ -1,0 +1,5 @@
+minimumReleaseAgeExclude:
+  - sh-ast
+  - sh-codemod
+  - "@eslint-sh/*"
+  - "@mike-north/*"

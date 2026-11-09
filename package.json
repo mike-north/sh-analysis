@@ -1,6 +1,6 @@
 {
   "name": "sh-analysis",
-  "version": "0.0.0-stage",
+  "version": "0.1.0",
   "description": "Shell word and command observations over the public sh-ast syntax model",
   "type": "module",
   "license": "MIT",
@@ -9,7 +9,7 @@
     "url": "git+https://github.com/mike-north/sh-analysis.git"
   },
   "engines": {
-    "node": ">=22.14.0"
+    "node": ">=22.13.0"
   },
   "packageManager": "pnpm@11.12.0",
   "exports": {
@@ -25,13 +25,28 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "check": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test test/*.test.mjs",
-    "check:release": "node scripts/check-release.mjs"
+    "check": "pnpm check:typecheck && pnpm check:test-types && pnpm check:format",
+    "test": "pnpm test:contracts && pnpm test:analysis && pnpm test:types",
+    "check:release": "node scripts/check-release.mjs",
+    "test:contracts": "node --test test/*.test.mjs",
+    "test:analysis": "vitest run",
+    "test:types": "tsd",
+    "check:format": "prettier --check .",
+    "fix:format": "prettier --write .",
+    "check:typecheck": "tsc -p tsconfig.json --noEmit",
+    "check:test-types": "tsc -p tsconfig.test.json"
   },
   "devDependencies": {
+    "@types/node": "^24.19.2",
     "prettier": "^3.9.10",
+    "tsd": "^0.33.0",
     "typescript": "~5.9.3",
+    "vitest": "^4.1.12",
     "yaml": "^2.8.1"
+  },
+  "types": "./dist/index.d.ts",
+  "author": "Mike North <michael.l.north@gmail.com>",
+  "dependencies": {
+    "sh-ast": "^0.11.0"
   }
 }
