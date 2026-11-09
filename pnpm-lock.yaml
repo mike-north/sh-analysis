@@ -6,6 +6,10 @@ settings:
 
 importers:
   .:
+    dependencies:
+      sh-ast:
+        specifier: ^0.11.0
+        version: 0.11.0
     devDependencies:
       "@types/node":
         specifier: ^24.19.2
@@ -1151,6 +1155,12 @@ packages:
     engines: { node: ">=10" }
     hasBin: true
 
+  sh-ast@0.11.0:
+    resolution:
+      {
+        integrity: sha512-WZ0wiOKmlEawKjAS9SD1/HS/Iwi1aV844FP+jGIhr7xOpKl/rV/OM2aPyrv06SFSLR6mVJw9Rhg2PYXeImCJ9g==,
+      }
+
   siginfo@2.0.0:
     resolution:
       {
@@ -2029,6 +2039,8 @@ snapshots:
   semver@5.7.3: {}
 
   semver@7.8.6: {}
+
+  sh-ast@0.11.0: {}
 
   siginfo@2.0.0: {}
 
