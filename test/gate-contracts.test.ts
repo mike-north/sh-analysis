@@ -6,11 +6,14 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   readdirSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { join, resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import test, { type TestContext } from "node:test";
 import { pathToFileURL } from "node:url";
 import { object } from "./support.ts";
@@ -23,11 +26,24 @@ const cli = join(root, "node_modules/@changesets/cli/bin.js");
 
 /** Every fixture owns its Git graph and source tree; the installed tooling alone is shared. */
 function fixture(t: TestContext, bump: string | null = "minor"): string {
-  mkdirSync(join(root, "temp"), { recursive: true });
-  const dir = mkdtempSync(join(root, "temp/gate-contract-"));
+  const temp = realpathSync(tmpdir());
+  const fromRoot = relative(realpathSync(root), temp);
+  if (
+    fromRoot === "" ||
+    (fromRoot !== ".." &&
+      !fromRoot.startsWith(`..${sep}`) &&
+      !isAbsolute(fromRoot))
+  ) {
+    throw new Error(
+      "Gate contract fixture temporary directory must be outside the repository",
+    );
+  }
+  const dir = mkdtempSync(join(temp, "gate-contract-"));
   t.after(() => {
     rmSync(dir, { recursive: true, force: true });
   });
+  // Keep formatter discovery tied to the installed tools without inheriting the workspace.
+  symlinkSync(join(root, "node_modules"), join(dir, "node_modules"));
   mkdirSync(join(dir, ".changeset"));
   writeFileSync(
     join(dir, "package.json"),
