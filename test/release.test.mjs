@@ -81,6 +81,15 @@ test("workflow is manual-only and scopes OIDC to a GitHub-hosted publication job
     "id-token": "write",
   });
   assert.equal(workflow.jobs.publish.environment, undefined);
+  assert.equal(
+    workflow.jobs.publish.if,
+    "github.repository == 'mike-north/sh-analysis' && github.ref == 'refs/heads/main'",
+  );
+  const guardStep = workflow.jobs.publish.steps.find(
+    (step) => step.run === "pnpm check:release",
+  );
+  assert.equal(guardStep?.env?.RELEASE_VERSION, "${{ inputs.version }}");
+  assert.equal(stepsCacheDisabled(workflow), true);
   const source = readFileSync(".github/workflows/release.yml", "utf8");
   assert.doesNotMatch(source, /NPM_TOKEN|NODE_AUTH_TOKEN|--provenance/);
   const steps = workflow.jobs.publish.steps;
@@ -133,4 +142,31 @@ test("release package contains executable and declaration entry points from a re
     ),
   );
   await import("../dist/index.js");
+});
+
+/** Publishing must install from the checked-in lock rather than restored caches. */
+function stepsCacheDisabled(workflow) {
+  const setup = workflow.jobs.publish.steps.find(
+    (step) => step.uses === "actions/setup-node@v4",
+  );
+  return (
+    setup?.with?.["package-manager-cache"] === false &&
+    setup.with.cache === undefined
+  );
+}
+
+test("ordinary validation runs on pull requests without publication authority", () => {
+  const workflow = parse(readFileSync(".github/workflows/check.yml", "utf8"));
+  assert.ok(workflow.on.pull_request);
+  assert.deepEqual(workflow.permissions, { contents: "read" });
+  for (const job of Object.values(workflow.jobs)) {
+    assert.equal(job.permissions?.["id-token"], undefined);
+    assert.doesNotMatch(JSON.stringify(job), /npm publish/);
+  }
+  const commands = workflow.jobs.validate.steps
+    .map((step) => step.run)
+    .filter(Boolean)
+    .join("\n");
+  for (const command of ["pnpm build", "pnpm check", "pnpm test"])
+    assert.ok(commands.includes(command));
 });

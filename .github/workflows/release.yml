@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: pnpm
+          package-manager-cache: false
       # Node 24 is the publishing runtime; pin npm above the trusted-publishing minimum.
       - run: npm install --global npm@11.21.1
       - run: pnpm install --frozen-lockfile

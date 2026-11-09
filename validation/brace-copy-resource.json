@@ -1,0 +1,130 @@
+{
+  "purpose": "Replacement ordinary unpublished sh-analysis0.1.0 after analysis-owned observation-copy refusal correction; no registry publication claim",
+  "analysis": {
+    "packageRelevantSourceHead": "d5106ca938d5bee315b680ea9832dca1df4e8dfb",
+    "version": "0.1.0",
+    "versionMetadataRewritten": false,
+    "tarball": "sh-analysis-0.1.0.tgz",
+    "tarballSha256": "a7656b95e51fc4ace34c33f655ce2148f598947d4ed9f71d4efcca41718df972",
+    "membersMatchCurrentBuiltFiles": true,
+    "installedMembersMatchTarball": true,
+    "memberCount": 23,
+    "assets": {
+      "LICENSE": "743b7d3b00806b36eb2709b92947699778bf5f397a41edef46f9a3578fd88cd4",
+      "dist/ansi-c-escapes.js": "04f5bca53a53bf09f44cc106ee62b7bdea7c7cf3d9936510f175545625311fb2",
+      "dist/brace-observation.js": "1859be6f1448b8116a578a5d9173860a9c21097506d73315479ed045309a25a5",
+      "dist/decode-lit.js": "0f1a65ecd7eb1b8b933488ae6ea825a1a1e6575784fb7abca63c13d258ec30bc",
+      "dist/deep-freeze.js": "289f7f166dd8701fc6da46956a3d5f77c3fef07957cea2e4eee4ec42e6a4a3d9",
+      "dist/enumerate-commands.js": "6e3716e77a970f2b519223ec192e3a7e6aee1b3887c24243beead594e0a0e45a",
+      "dist/errors.js": "293e58f3ea939dc504a86eb360695a802e9f1d820f9e23b67f17b1559f04d3df",
+      "dist/index.js": "a96f9bb5dbbf73baa2c4dc6ad647c73cfbeed76a143e0ba264afc86302bc4364",
+      "dist/node-helpers.js": "8cee7f365bc81cafa01fee7c873a4fa35a28a6e6b651ab730b4cd493b69bbdc7",
+      "dist/resolve-argv0.js": "e630408a4f3c431cdcc72f11c7ad971ae9a9554955e04d16b6370649fd7d6b02",
+      "dist/resolve-word.js": "6cda661daa691457e587e4fbe8a103fd6a674d5ae7786ec0ecfb582d059ac056",
+      "package.json": "ac1e1e61e54b210d9cc810ef9b48c7c21e8f1c1c903d12c5e1eef6dad43217b5",
+      "README.md": "7392a913e3330b791feef817fd7747c061894664f7e67adfa7a8984e295c0e4b",
+      "dist/ansi-c-escapes.d.ts": "064bc1c7ee5255a4e3afc069e45b9fa8969fb875751ab214ca25a8c447186d50",
+      "dist/brace-observation.d.ts": "98ee90766839e6a78c90181fa740f2a9b8db697e8f3e825ce647ef62b6d4a79d",
+      "dist/decode-lit.d.ts": "97ee6171fc5081f8b04f16be97af8246fa3290468651df896344f43025b988ee",
+      "dist/deep-freeze.d.ts": "11f907365d50d73b55d8412d37cb39c781d9e531810a9f2a57f3ca5ed9d59d24",
+      "dist/enumerate-commands.d.ts": "d9f8b595ca5079031dc6cd47e7d1331d819df094cfef7be8d14a56f4520939a1",
+      "dist/errors.d.ts": "1d2d8b8e200952d30072ea0dab0eaf32e1e9038ee32855aa729c4ed2f2e17342",
+      "dist/index.d.ts": "80c4671c6d03481553ee5d30256856fa0b190a188769a26b3f933c75c0129437",
+      "dist/node-helpers.d.ts": "6050a06ec2cb7198d8e4b137eb6ec04960a5d548ed26de78c08571df0ff4ec15",
+      "dist/resolve-argv0.d.ts": "36e3f35429b6930345a8b7e64670152e5210e52edfb428f37838cbb3ff4157d2",
+      "dist/resolve-word.d.ts": "6dfe5a6c95c6c12a905557d900c95df155620f72d50ec2d91f1ee7028d339e29"
+    }
+  },
+  "binding": {
+    "sourceHead": "7e7449ee846cbc6e3892cc8313703d45632121c2",
+    "bindingParent": "8f5311169e1225dc26d6b0e9d0f8abbca1e47ae9",
+    "selectedForkRevision": "bbc7c4ace575d5de375726fdaa2a5c001c46564c",
+    "tarball": "sh-ast-0.11.0.tgz",
+    "tarballSha256": "66c3875a6f67fb385ca695bd42209073d1b88e1a40c7eafc8133e7713905e957",
+    "canonicalWasmSha256": "50f0e4434fba8255bf60f74cfe5f6f550defb75352e31523102c01aca54001c7",
+    "canonicalBuildSource": "16df152092d610435e779e47d08b0acdf400cc8c",
+    "canonicalBuildRun": "https://github.com/mike-north/sh-ast/actions/runs/42171105574",
+    "prospectiveVersion": "0.11.0",
+    "originalVsProspectiveOnlyVersionRewrite": true,
+    "comparedTo452OnlyChangedMembers": ["package/README.md"],
+    "installedMembersMatchTarball": true,
+    "memberCount": 78
+  },
+  "moduleIdentity": {
+    "sameBindingModule": true,
+    "exports": [
+      "DEFAULT_EMBEDDED_COMMAND_INTERPRETERS",
+      "DEFAULT_TRANSPARENT_WRAPPERS",
+      "ShAnalysisError",
+      "ShAnalyzeInvalidWrapperSpecError",
+      "ShAnalyzeMaxDepthError",
+      "ShAnalyzeResourceError",
+      "enumerateCommands",
+      "resolveArgv0",
+      "resolveWord"
+    ],
+    "resource": {
+      "code": "SH_ANALYSIS_RESOURCE",
+      "operation": "brace-observation-copy",
+      "causeIdentity": true,
+      "standardNonenumerableCause": true
+    }
+  },
+  "newContract": {
+    "class": "ShAnalyzeResourceError",
+    "base": "ShAnalysisError",
+    "code": "SH_ANALYSIS_RESOURCE",
+    "operation": "brace-observation-copy",
+    "cause": "original observed RangeError, standard nonenumerable cause",
+    "scope": "only exact observed stack-exhaustion RangeError during analysis-owned structuredClone; unrelated clone and binding-stage errors preserve identity; no fixed syntax-depth or clone/schema algorithm"
+  },
+  "testsFirst": {
+    "focusedPreFix": {
+      "failed": 1,
+      "passed": 8
+    },
+    "normalStackChildPreFix": "reported raw RangeError reproduced on each Node22/24 before production edit",
+    "packagedExportPreFix": "missing new public class rejected by real package smoke test",
+    "focusedPostFix": {
+      "passed": 9,
+      "failed": 0
+    }
+  },
+  "validation": {
+    "nodeVersions": ["22.22.1", "24.14.0"],
+    "pnpmVersion": "11.12.0",
+    "build": "passed both",
+    "strictSourceAndTestTypes": "passed both",
+    "format": "passed both",
+    "runtimeTestsPerNode": 792,
+    "runtimeSuites": 16,
+    "contractsPerNode": 8,
+    "tsd": "passed both",
+    "freshInstalledCopyProbePerNode": {
+      "attempts": 3,
+      "depth": 2000,
+      "unchangedGraphRecords": 8013,
+      "typedAnalysisRefusal": true,
+      "causeRetained": true,
+      "ordinaryReuse": true
+    },
+    "nativeBindingOutputPropagationPerNode": {
+      "attempts": 8,
+      "depth": 2000,
+      "bindingOwnedErrorPreserved": true,
+      "callerUnchanged": true,
+      "ordinaryReuse": true
+    }
+  },
+  "rawValidation": "external handoff raw-validation.json",
+  "resolutionPolicy": "Committed manifest retains sh-ast^0.11.0 and ordinary unresolved lock; local artifact install and process-local pnpm_config_verify_deps_before_run=false are not committed runtime resolutions/overrides.",
+  "releaseGate": "Real sh-ast0.11 registry publication, ordinary lock refresh, hosted CI and root acceptance remain pending. No merge, dispatch, publication, OIDC exchange or registry mutation.",
+  "supersedes": "Old3699and96ad analysis artifacts are historical; current a765 includes the same corrected copy-boundary behavior plus the operational-failure documentation correction.",
+  "commentOnlyRefreshFromC50": {
+    "changedMembers": [
+      "package/dist/ansi-c-escapes.js",
+      "package/dist/ansi-c-escapes.d.ts"
+    ],
+    "runtimeAndDeclarationAstEqualWithoutComments": true
+  }
+}

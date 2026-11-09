@@ -1,0 +1,330 @@
+/**
+ * Decodes `$'...'` (Bash ANSI-C Quoting) within an explicit Unicode-text domain.
+ * Unicode escapes require non-NUL scalar values. Byte escapes require non-NUL
+ * ASCII; non-ASCII runs remain unsupported even if they could form UTF-8, since
+ * decoding shell byte strings or modeling arbitrary locale encodings is outside
+ * this operation. Literal Unicode text assumes a UTF-8 shell locale.
+ *
+ * mvdan/sh's parser does **not** perform this decoding: for a `SglQuoted`
+ * word part with `Dollar: true`, the upstream `Value` field is the raw,
+ * un-decoded source text between the quotes (verified empirically against
+ * mvdan.cc/sh/v3 v3.13.1 — see `test/analyze-resolve-word.test.ts`'s module
+ * comment for how this was confirmed). This module fills that gap using the
+ * escape table the Bash Reference Manual documents, independently of
+ * whatever mvdan/sh itself does or doesn't decode.
+ *
+ * @see https://www.gnu.org/software/bash/manual/bash.html#ANSI_002dC-Quoting
+ * @internal
+ */
+
+/**
+ * Hex digit predicate for `\xHH`/`\uHHHH`/`\UHHHHHHHH`. `ch` is expected to
+ * come from `String.prototype.charAt`, which returns `''` (never
+ * `undefined`) past the end of the string — `''` correctly fails this test,
+ * so callers don't need a separate bounds check.
+ */
+function isHexDigit(ch: string): boolean {
+  return /^[0-9a-fA-F]$/.test(ch);
+}
+
+/** Octal digit predicate for `\nnn`; see {@link isHexDigit}'s `charAt` note. */
+function isOctalDigit(ch: string): boolean {
+  return ch.length === 1 && ch >= "0" && ch <= "7";
+}
+
+/**
+ * The highest Unicode scalar value `\uHHHH`/`\UHHHHHHHH` can validly decode
+ * to. `\uHHHH` (max 4 hex digits, i.e. `0xFFFF`) can never exceed this, but
+ * `\UHHHHHHHH` (up to 8 hex digits, i.e. up to `0xFFFFFFFF`) routinely does.
+ *
+ * The Bash Reference Manual's ANSI-C Quoting table documents `\UHHHHHHHH`
+ * only as "the Unicode ... character whose value is the hexadecimal value
+ * HHHHHHHH" — it does not say what happens when that value has no
+ * corresponding Unicode character (i.e. is greater than `U+10FFFF`, the
+ * highest code point Unicode defines). Real bash's behavior for this case
+ * is undocumented and not a reasonable decode target: it falls back to a
+ * pre-RFC-3629, up-to-6-byte "UTF-8-like" bit-packing with no range
+ * validation (confirmed empirically — e.g. `$'\U00110000'` produces the
+ * raw byte sequence `f4 90 80 80`, which is not valid UTF-8 text, and
+ * `$'\UFFFFFFFF'` produces no output at all, exit 0). Neither of those is
+ * representable as an exact JavaScript string, so this module does **not**
+ * fall back to treating the escape as literal, un-decoded text the way it
+ * does for other unrecognized escapes — that would silently claim a
+ * `static: true` exact text that real bash never produces (a false
+ * static). Surrogate values U+D800..U+DFFF likewise emit invalid UTF-8 bytes
+ * in Bash, even though JavaScript permits lone UTF-16 code units. Two separate
+ * surrogate escapes are encoded separately, not combined into a scalar.
+ * Instead, {@link decodeAnsiCString} reports a non-scalar
+ * `\u`/`\U` as *unrepresentable* via {@link AnsiCDecodeResult}, and
+ * `resolveWord` propagates that as `{ static: false, reason: 'unsupported' }`
+ * for the whole word. Completed classification does not pass a non-scalar to
+ * `String.fromCodePoint` and fabricate a semantic `RangeError`. Operational
+ * observation failures, including copy and binding refusals, still propagate.
+ *
+ * @see https://www.gnu.org/software/bash/manual/bash.html#ANSI_002dC-Quoting
+ */
+const MAX_UNICODE_CODE_POINT = 0x10ffff;
+
+/** UTF-16 reserves this interval for code units; those values are not Unicode scalar text. */
+const SURROGATE_START = 0xd800;
+/** Inclusive upper boundary of the non-scalar surrogate interval. */
+const SURROGATE_END = 0xdfff;
+
+/** Only scalar values have the exact Unicode-text meaning this decoder promises. */
+function isUnicodeScalar(value: number): boolean {
+  return (
+    value <= MAX_UNICODE_CODE_POINT &&
+    (value < SURROGATE_START || value > SURROGATE_END)
+  );
+}
+
+/** Byte-oriented escapes have exact Unicode meaning only for non-NUL ASCII bytes. */
+function isSupportedByte(value: number): boolean {
+  return value > 0 && value < 0x80;
+}
+
+/**
+ * Greedily consumes up to `maxDigits` hex digits starting at `start`,
+ * returning the parsed numeric value and how many digits were consumed (`0`
+ * if none were valid).
+ */
+function readHexDigits(
+  source: string,
+  start: number,
+  maxDigits: number,
+): { readonly value: number; readonly length: number } {
+  let digits = "";
+  let index = start;
+  while (digits.length < maxDigits) {
+    const ch = source.charAt(index);
+    if (!isHexDigit(ch)) {
+      break;
+    }
+    digits += ch;
+    index += 1;
+  }
+  return {
+    value: digits.length > 0 ? parseInt(digits, 16) : 0,
+    length: digits.length,
+  };
+}
+
+/**
+ * Greedily consumes up to `maxDigits` octal digits starting at `start`,
+ * returning the parsed numeric value and how many digits were consumed.
+ */
+function readOctalDigits(
+  source: string,
+  start: number,
+  maxDigits: number,
+): { readonly value: number; readonly length: number } {
+  let digits = "";
+  let index = start;
+  while (digits.length < maxDigits) {
+    const ch = source.charAt(index);
+    if (!isOctalDigit(ch)) {
+      break;
+    }
+    digits += ch;
+    index += 1;
+  }
+  return {
+    value: digits.length > 0 ? parseInt(digits, 8) : 0,
+    length: digits.length,
+  };
+}
+
+/**
+ * The result of {@link decodeAnsiCString}: supported Unicode text, or `ok: false`
+ * for NUL, non-ASCII byte escapes or a `\u`/`\U` escape whose value
+ * has no corresponding Unicode character (see {@link MAX_UNICODE_CODE_POINT}'s
+ * doc comment for why that case can't be decoded to an exact JavaScript
+ * string, and can't be left as literal un-decoded text either without
+ * claiming a false `static: true` result). Never throws — callers (see
+ * `resolveWord`'s `SglQuoted` handling) turn `ok: false` into
+ * `{ static: false, reason: 'unsupported' }` for the whole word.
+ *
+ * @internal
+ */
+export type AnsiCDecodeResult =
+  { readonly ok: true; readonly text: string } | { readonly ok: false };
+
+/**
+ * Decodes the raw inner text of a `$'...'` (ANSI-C quoted) string per Bash
+ * Reference Manual §3.1.2.4, "ANSI-C Quoting". `raw` is the text between
+ * the quotes (mvdan/sh's `SglQuoted.Value` for a `Dollar: true` node),
+ * exactly as it appears in source — not yet interpreted in any way.
+ *
+ * Recognized escapes: `\a \b \e \E \f \n \r \t \v \\ \' \" \?`, octal
+ * `\nnn` (one to three digits), hex `\xHH` (one or two digits), Unicode
+ * `\uHHHH` (one to four digits) and `\UHHHHHHHH` (one to eight digits), and
+ * control-character `\cX`. An unrecognized backslash sequence (not in this
+ * table, and not a recognized numeric escape) is left as-is — Bash's own
+ * decoding is best-effort for malformed input, so unknown escapes remain
+ * literal. A recognized non-scalar Unicode escape instead completes as
+ * unsupported classification — see {@link AnsiCDecodeResult}. These semantic
+ * outcomes do not suppress operational observation failures, which still propagate.
+ *
+ * @internal
+ */
+export function decodeAnsiCString(raw: string): AnsiCDecodeResult {
+  let text = "";
+  let i = 0;
+  while (i < raw.length) {
+    const ch = raw[i];
+    if (ch !== "\\" || i + 1 >= raw.length) {
+      // `i < raw.length` (the while guard) means indexing here is always
+      // in-bounds and `ch` is a real character, not `undefined`.
+      if (ch === "\0") {
+        return { ok: false };
+      }
+      text += ch;
+      i += 1;
+      continue;
+    }
+    // `i + 1 < raw.length` was just confirmed above, so this index is safe.
+    const next = raw[i + 1];
+    switch (next) {
+      case "a":
+        text += "\x07";
+        i += 2;
+        break;
+      case "b":
+        text += "\x08";
+        i += 2;
+        break;
+      case "e":
+      case "E":
+        text += "\x1b";
+        i += 2;
+        break;
+      case "f":
+        text += "\x0c";
+        i += 2;
+        break;
+      case "n":
+        text += "\n";
+        i += 2;
+        break;
+      case "r":
+        text += "\r";
+        i += 2;
+        break;
+      case "t":
+        text += "\t";
+        i += 2;
+        break;
+      case "v":
+        text += "\x0b";
+        i += 2;
+        break;
+      case "\\":
+        text += "\\";
+        i += 2;
+        break;
+      case "'":
+        text += "'";
+        i += 2;
+        break;
+      case '"':
+        text += '"';
+        i += 2;
+        break;
+      case "?":
+        text += "?";
+        i += 2;
+        break;
+      case "x": {
+        const { value, length } = readHexDigits(raw, i + 2, 2);
+        if (length > 0) {
+          if (!isSupportedByte(value)) {
+            return { ok: false };
+          }
+          text += String.fromCharCode(value);
+          i += 2 + length;
+        } else {
+          text += ch;
+          i += 1;
+        }
+        break;
+      }
+      case "u": {
+        const { value, length } = readHexDigits(raw, i + 2, 4);
+        if (length === 0) {
+          text += ch;
+          i += 1;
+          break;
+        }
+        // BMP surrogate values are representable UTF-16 code units but do
+        // not describe Unicode text; Bash emits their invalid UTF-8 bytes.
+        if (value === 0 || !isUnicodeScalar(value)) {
+          return { ok: false };
+        }
+        text += String.fromCodePoint(value);
+        i += 2 + length;
+        break;
+      }
+      case "U": {
+        const { value, length } = readHexDigits(raw, i + 2, 8);
+        if (length === 0) {
+          // Not a recognized numeric escape (no valid hex digit at all):
+          // leave un-decoded, same as any other unrecognized escape.
+          text += ch;
+          i += 1;
+          break;
+        }
+        if (value === 0 || !isUnicodeScalar(value)) {
+          // A syntactically recognized escape can still name a non-scalar
+          // value. Report uncertainty for the whole word instead of encoding
+          // a replacement or merging independent surrogate escapes.
+          return { ok: false };
+        }
+        text += String.fromCodePoint(value);
+        i += 2 + length;
+        break;
+      }
+      case "c": {
+        const controlChar = raw.charAt(i + 2);
+        if (controlChar !== "") {
+          // Bash transforms the operand's first byte, not a Unicode character.
+          // Non-ASCII operands can leave invalid UTF-8 continuation bytes behind,
+          // so they cannot support this operation's exact Unicode-text claim.
+          const operand = controlChar.charCodeAt(0);
+          if (operand > 0x7f) {
+            return { ok: false };
+          }
+          // ASCII control notation selects the low five bits; '?' denotes DEL.
+          const code = controlChar === "?" ? 0x7f : operand & 0x1f;
+          if (!isSupportedByte(code)) {
+            return { ok: false };
+          }
+          text += String.fromCharCode(code);
+          // A doubled backslash is one control operand. A single backslash
+          // before any other character leaves that following literal intact.
+          i += controlChar === "\\" && raw.charAt(i + 3) === "\\" ? 4 : 3;
+        } else {
+          text += ch;
+          i += 1;
+        }
+        break;
+      }
+      default:
+        if (isOctalDigit(next)) {
+          const { value, length } = readOctalDigits(raw, i + 1, 3);
+          // Bash stores octal escape results as bytes, including modulo-256 wrapping.
+          const byte = value & 0xff;
+          if (!isSupportedByte(byte)) {
+            return { ok: false };
+          }
+          text += String.fromCharCode(byte);
+          i += 1 + length;
+        } else {
+          // Not a recognized escape: leave the backslash (and whatever
+          // follows) untouched, one character at a time.
+          text += ch;
+          i += 1;
+        }
+    }
+  }
+  return { ok: true, text };
+}
