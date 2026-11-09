@@ -6,12 +6,14 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   renameSync,
   rmSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { join, resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import test, { type TestContext } from "node:test";
 import { object, workflow } from "./support.ts";
 
@@ -19,13 +21,24 @@ const root = resolve(import.meta.dirname, "..");
 const policy =
   /stays in the 0\.x series until the owner declares the shape stable.*no override flag/is;
 
-// Fixtures live inside the worktree and outside the repository's publishable sources.
+// Standalone package roots must not inherit the repository's workspace configuration.
 function fixture(
   t: TestContext,
   { version = "0.4.0", bump = "minor" } = {},
 ): string {
-  mkdirSync(join(root, "temp"), { recursive: true });
-  const directory = mkdtempSync(join(root, "temp/.release-gate-"));
+  const temp = realpathSync(tmpdir());
+  const fromRoot = relative(realpathSync(root), temp);
+  if (
+    fromRoot === "" ||
+    (fromRoot !== ".." &&
+      !fromRoot.startsWith(`..${sep}`) &&
+      !isAbsolute(fromRoot))
+  ) {
+    throw new Error(
+      "Release gate fixture temporary directory must be outside the repository",
+    );
+  }
+  const directory = mkdtempSync(join(temp, "sh-analysis-release-gate-"));
   t.after(() => {
     rmSync(directory, { recursive: true, force: true });
   });
