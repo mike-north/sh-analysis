@@ -1,12 +1,29 @@
 {
   "name": "sh-analysis",
   "version": "0.1.0",
-  "description": "Shell word and command observations over the public sh-ast syntax model",
+  "description": "Facts about shell scripts from the sh-ast syntax tree: word resolution, every command site, wrapper chains (sudo, env, nice) and embedded interpreter programs, with explicit uncertainty.",
+  "keywords": [
+    "shell",
+    "bash",
+    "zsh",
+    "posix",
+    "sh",
+    "static-analysis",
+    "ast",
+    "command",
+    "argv",
+    "lint",
+    "sh-ast"
+  ],
   "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mike-north/sh-analysis.git"
+  },
+  "homepage": "https://github.com/mike-north/sh-analysis#readme",
+  "bugs": {
+    "url": "https://github.com/mike-north/sh-analysis/issues"
   },
   "engines": {
     "node": ">=22.14.0"
