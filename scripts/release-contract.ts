@@ -28,7 +28,11 @@ export function assertZeroVersion(
   }
 }
 
-/** Publication additionally requires an explicitly chosen, non-placeholder main revision. */
+/**
+ * Publication requires a push to main of the trusted repository, the registered package identity
+ * and a real (non-placeholder) 0.x version. Which version ships is decided by the Version Packages
+ * pull request that was merged, not by a typed input.
+ */
 export function assertRelease(
   input: unknown,
   environment: NodeJS.ProcessEnv,
@@ -41,13 +45,11 @@ export function assertRelease(
   assertZeroVersion(packageJson.version, packageJson.name);
   const repository = "mike-north/sh-analysis";
   if (
-    environment.GITHUB_EVENT_NAME !== "workflow_dispatch" ||
+    environment.GITHUB_EVENT_NAME !== "push" ||
     environment.GITHUB_REPOSITORY !== repository ||
     environment.GITHUB_REF !== "refs/heads/main"
   ) {
-    throw new Error(
-      "Release requires manual dispatch from mike-north/sh-analysis main.",
-    );
+    throw new Error("Release requires a push to mike-north/sh-analysis main.");
   }
   if (
     packageJson.name !== "sh-analysis" ||
@@ -58,14 +60,13 @@ export function assertRelease(
       "Release package identity does not match the trusted publisher.",
     );
   }
-  // Bootstrap/staging versions are deliberately not publishable; release preparation chooses a real version.
+  // Bootstrap/staging versions are deliberately not publishable; Changesets chooses a real version.
   if (
     !/^0\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(packageJson.version) ||
-    packageJson.version === "0.0.0" ||
-    packageJson.version !== environment.RELEASE_VERSION
+    packageJson.version === "0.0.0"
   ) {
     throw new Error(
-      "Release requires an exact, non-placeholder stable 0.x package version.",
+      "Release requires an exact, non-placeholder 0.x package version.",
     );
   }
 }

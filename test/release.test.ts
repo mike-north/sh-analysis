@@ -17,10 +17,9 @@ const approved = {
   repository: { type: "git", url: `git+https://github.com/${repository}.git` },
 };
 const identity = {
-  GITHUB_EVENT_NAME: "workflow_dispatch",
+  GITHUB_EVENT_NAME: "push",
   GITHUB_REPOSITORY: repository,
   GITHUB_REF: "refs/heads/main",
-  RELEASE_VERSION: "0.1.0",
 };
 
 // Exercise the production authorization contract with hand-selected hostile contexts.
@@ -36,15 +35,14 @@ function guard(packageOverride = {}, environmentOverride = {}) {
   }
 }
 
-await test("release accepts only the explicitly selected main-branch package version", () => {
+await test("release accepts only a push to main of the trusted repository", () => {
   assert.equal(guard().status, 0);
   for (const environment of [
-    { GITHUB_EVENT_NAME: "push" },
+    { GITHUB_EVENT_NAME: "workflow_dispatch" },
     { GITHUB_EVENT_NAME: "pull_request" },
     { GITHUB_REPOSITORY: "other/sh-analysis" },
     { GITHUB_REF: "refs/heads/feature" },
     { GITHUB_REF: "refs/tags/v0.1.0" },
-    { RELEASE_VERSION: "0.2.0" },
   ])
     assert.notEqual(
       guard({}, environment).status,
@@ -62,11 +60,7 @@ await test("release refuses placeholders, non-0.x versions and incorrect package
     "0.1.0-stage",
     "0.1.0+metadata",
   ]) {
-    assert.notEqual(
-      guard({ version }, { RELEASE_VERSION: version }).status,
-      0,
-      version,
-    );
+    assert.notEqual(guard({ version }).status, 0, version);
   }
   assert.notEqual(guard({ name: "other-package" }).status, 0);
   assert.notEqual(
@@ -76,30 +70,26 @@ await test("release refuses placeholders, non-0.x versions and incorrect package
   );
 });
 
-await test("workflow is manual-only and scopes OIDC to a GitHub-hosted publication job", () => {
-  const workflow = readWorkflow(
-    readFileSync(".github/workflows/release.yml", "utf8"),
-  );
-  assert.deepEqual(Object.keys(workflow.on), ["workflow_dispatch"]);
-  assert.deepEqual(workflow.permissions, { contents: "read" });
-  assert.equal(workflow.jobs.publish["runs-on"], "ubuntu-latest");
-  assert.deepEqual(workflow.jobs.publish.permissions, {
-    contents: "read",
+await test("workflow releases on push to main through the Changesets action without a GitHub environment", () => {
+  const source = readFileSync(".github/workflows/release.yml", "utf8");
+  const workflow = readWorkflow(source);
+  // npm trusted publishing is registered against this file name with no environment.
+  assert.deepEqual(Object.keys(workflow.on), ["push"]);
+  assert.deepEqual(object(workflow.on.push).branches, ["main"]);
+  assert.deepEqual(workflow.permissions, {
+    contents: "write",
+    "pull-requests": "write",
     "id-token": "write",
   });
-  assert.equal(workflow.jobs.publish.environment, undefined);
-  assert.equal(
-    workflow.jobs.publish.if,
-    "github.repository == 'mike-north/sh-analysis' && github.ref == 'refs/heads/main'",
-  );
-  const guardStep = workflow.jobs.publish.steps.find(
-    (step) => step.run === "pnpm check:release",
-  );
-  assert.equal(guardStep?.env.RELEASE_VERSION, "${{ inputs.version }}");
+  const job = workflow.jobs.release;
+  assert.ok(job);
+  assert.equal(job["runs-on"], "ubuntu-latest");
+  assert.equal(job.environment, undefined);
+  assert.equal(job.if, "github.repository == 'mike-north/sh-analysis'");
   assert.equal(stepsCacheDisabled(workflow), true);
-  const source = readFileSync(".github/workflows/release.yml", "utf8");
   assert.doesNotMatch(source, /NPM_TOKEN|NODE_AUTH_TOKEN|--provenance/);
-  const steps = workflow.jobs.publish.steps;
+  assert.doesNotMatch(source, /workflow_dispatch|inputs\./);
+  const steps = job.steps;
   assert.ok(
     steps.some(
       (step) =>
@@ -107,23 +97,35 @@ await test("workflow is manual-only and scopes OIDC to a GitHub-hosted publicati
         step.with["node-version"] === 24,
     ),
   );
-  const commands = steps
-    .map((step) => step.run)
-    .filter(Boolean)
-    .join("\n");
-  for (const required of [
+  const action = steps.find(
+    (step) =>
+      typeof step.uses === "string" &&
+      step.uses.startsWith("changesets/action@"),
+  );
+  assert.ok(action);
+  assert.equal(action.with.version, "pnpm version-packages");
+  assert.equal(action.with.publish, "pnpm release");
+  const install = steps.findIndex((step) => step.run?.includes("pnpm install"));
+  assert.ok(install >= 0 && install < steps.indexOf(action));
+});
+
+await test("release script builds, checks, tests and guards before changeset publish", () => {
+  const scripts = object(
+    object(JSON.parse(readFileSync("package.json", "utf8"))).scripts,
+  );
+  const release = scripts.release;
+  assert.ok(typeof release === "string");
+  const order = [
     "pnpm build",
     "pnpm check",
     "pnpm test",
     "pnpm check:release",
-    "npm pack --dry-run",
-    "npm publish",
-  ]) {
-    assert.ok(commands.includes(required), required);
-  }
-  assert.ok(commands.indexOf("pnpm test") < commands.indexOf("npm publish"));
-  assert.ok(
-    commands.indexOf("pnpm check:release") < commands.indexOf("npm publish"),
+    "changeset publish",
+  ].map((command) => release.indexOf(command));
+  assert.ok(order.every((index) => index >= 0));
+  assert.deepEqual(
+    order,
+    [...order].sort((a, b) => a - b),
   );
 });
 
@@ -157,7 +159,7 @@ await test("release package contains executable and declaration entry points fro
 
 /** Publishing must install from the checked-in lock rather than restored caches. */
 function stepsCacheDisabled(workflow: IWorkflow) {
-  const setup = workflow.jobs.publish.steps.find(
+  const setup = workflow.jobs.release.steps.find(
     (step) => step.uses === "actions/setup-node@v4",
   );
   return (
