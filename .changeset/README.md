@@ -1,6 +1,6 @@
 # Version preparation
 
-This project stays in the 0.x series until the owner declares the shape stable.
+This project stays in the 0.x series until the maintainer declares the API stable.
 There is no override flag. Never request a `major` bump, including for breaking
 changes: use `minor` for breaking changes while the API is taking shape.
 

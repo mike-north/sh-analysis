@@ -1,8 +1,7 @@
 /**
- * Tests for {@link enumerateCommands} (`sh-ast/analyze`) against the
- * acceptance criteria in https://github.com/mike-north/eslint-sh/issues/4.
+ * Tests for {@link enumerateCommands} against its acceptance criteria.
  *
- * Criterion -> test mapping (see this PR's description for the full table):
+ * Criterion -> test mapping:
  *
  *   1. Compound coverage (one named test per `CommandContext` kind) — the
  *      `describe('enumerateCommands — criterion 1 ...')` block below.
