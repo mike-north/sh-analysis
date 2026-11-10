@@ -1,0 +1,42 @@
+name: Bug report
+description: A word, command site or wrapper chain is reported wrongly.
+labels: [bug]
+body:
+  - type: textarea
+    id: script
+    attributes:
+      label: Shell input
+      description: The smallest script that shows the problem, and the dialect you parsed it with.
+      render: sh
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: Code
+      description: The sh-analysis calls you made.
+      render: js
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What you got
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and why
+      description: If you can, cite the shell manual or show what a real shell does.
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: sh-analysis, sh-ast and Node.js versions.
+      placeholder: sh-analysis 0.1.0, sh-ast 0.11.0, Node 22.14.0
+    validations:
+      required: true
