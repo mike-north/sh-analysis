@@ -10,8 +10,11 @@ a guess.
 
 It is for people who build linters, policy checkers and dependency harvesters for shell scripts.
 Regex scanning misses `$(...)` and pipelines and is fooled by quoting; this works on the real
-parse tree and never invents text it cannot know. Node.js 22.14+, ESM, types included. Not on
-npm yet: [build it from this repository](#install) to try it.
+parse tree and never invents text it cannot know. Requires Node.js 22.14+; ESM, types included.
+
+```sh
+npm install sh-analysis sh-ast
+```
 
 ```js
 import { parseSync } from "sh-ast";
@@ -39,20 +42,6 @@ unknown (expansion)
 ```
 
 ## Install
-
-`sh-analysis` is not on npm yet (the `sh-analysis` name currently holds an empty placeholder).
-Until the first release, build it from this repository (you need
-[pnpm](https://pnpm.io/installation)) and install the tarball:
-
-```sh
-git clone https://github.com/mike-north/sh-analysis.git
-cd sh-analysis
-pnpm install && pnpm build && npm pack
-# then, in your project:
-npm install sh-ast /path/to/sh-analysis/sh-analysis-0.1.0.tgz
-```
-
-Once it is released:
 
 ```sh
 npm install sh-analysis sh-ast
