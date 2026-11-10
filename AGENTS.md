@@ -1,19 +1,55 @@
-# Project guidance
+# Guidance for contributors and coding agents
 
-Follow the fenced ecosystem map below for repository responsibilities.
+This file applies to anyone changing this repository, people and coding agents alike. Read
+[CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow; the essentials are below.
 
-Defaults must be documented and overridable.
+## Responsibilities
 
-Write intended-outcome tests before software changes. Document durable semantic intent
-in modules, types, constants and operations, including responsibilities and invariants.
-Necessary API corrections are hard breaks,
-without migration aliases. Keep versions below 1.0. Development uses Node 22 and pnpm
-11.12; build, check and test must pass before pushes. Commit as Mike North
-<michael.l.north@gmail.com>, without AI attribution or skipped hooks.
+`sh-analysis` turns the syntax tree from `sh-ast` into facts about shell scripts: word
+resolution, command sites and their contexts, wrapper chains and interpreter invocations, each
+with explicit uncertainty. The ecosystem map at the end of this file states what this package
+owns and what it must not do. In short:
 
-Release
-only through the manual GitHub Actions release workflow using npm trusted publishing.
-Never run an actual publish during implementation. Do not add long-lived npm tokens.
+- Do not parse or scan shell text here. Structure comes from `sh-ast` nodes and positions; a
+  grammar or lexer fix belongs in `sh-ast` (or its Go fork).
+- Report facts, never verdicts. No severity, advice or "allowed" decisions in results.
+- Defaults (wrapper and interpreter tables) are documented, frozen data that callers can replace.
+- Never fabricate a static result. When the text cannot support an exact answer, return
+  `static: false` with a reason, or an entry in `uncertainties`.
+
+## Build and test
+
+Use Node 22 (see `.nvmrc`) and pnpm 11.12. Before pushing, all of these must pass:
+
+```sh
+pnpm install
+pnpm build
+pnpm check
+pnpm test
+```
+
+- Write the test for the intended behaviour before changing the code, and assert outcomes
+  derived from the shell manuals or a real shell, not snapshots of current output.
+- Document durable intent in modules, types, constants and functions: what each represents, its
+  responsibilities and invariants. Keep progress notes out of code comments.
+- After an intentional public API change, run `pnpm build:docs` and commit the updated
+  `api-report/` and `docs/api/`.
+
+## Versioning
+
+The package stays below 1.0. Add a changeset (`pnpm exec changeset`) for any change that ships
+in the npm package, using `patch` for fixes and `minor` for new or breaking API. Never use
+`major`. A necessary API correction is a clean break: no deprecated aliases or migration shims.
+Tooling-only changes need no changeset.
+
+## Pull requests
+
+- One focused change per pull request, with a description of what changed, why, and how you
+  verified it.
+- CI must be green, and every pull request needs an approving review before it merges.
+- Do not skip Git hooks. Do not add AI attribution trailers to commits or pull requests.
+- Releases are published by the maintainer through the manual release workflow. Never run
+  `npm publish` from a contribution, and never add npm tokens to the repository.
 
 <!-- ecosystem-map:begin -->
 # Ecosystem map

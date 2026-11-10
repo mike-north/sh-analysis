@@ -4,3 +4,5 @@ dist/
 temp/
 .pnpm-store/
 scratch/
+.DS_Store
+*.local.*
