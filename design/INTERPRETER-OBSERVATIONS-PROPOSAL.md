@@ -1,7 +1,8 @@
 # Separate executable identity from embedded-program uncertainty
 
-This is a domain proposal, not an accepted expansion of the extracted API.
-The governing layer plan requires a decision before complex option-model work.
+Status: proposal, not yet implemented. The current `resolveArgv0` API is
+unchanged; this describes a possible future model and needs a decision before
+any work on a richer interpreter option model starts.
 
 ## Problem
 
@@ -13,9 +14,9 @@ For `bash "$options" -c x`, the executable is still `bash`, but argument expansi
 can change interpretation of the later selector. Returning static executable
 text alone cannot establish absence of an embedded program.
 
-The preserved extraction candidate documents its overloaded result and known
-limits. It must not be used as evidence of execution completeness. Extraction
-does not extend its option grammar or claim these questions are resolved.
+The current `resolveArgv0` documents its overloaded result and known limits.
+It must not be used as evidence of execution completeness, and its option
+grammar is not being extended until these questions are resolved.
 
 ## Proposed model
 

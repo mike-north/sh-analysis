@@ -1,0 +1,23 @@
+name: Feature request
+description: A fact about shell scripts that sh-analysis should report.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to find out?
+      description: Describe the analysis you are building and the question it needs answered.
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Example
+      description: A script and the result you would like to get for it.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do today
+      description: How you work around it now, if at all.

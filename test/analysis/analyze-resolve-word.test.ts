@@ -1,6 +1,5 @@
 /**
- * Tests for {@link resolveWord} (`sh-ast/analyze`) against the acceptance
- * criteria in https://github.com/mike-north/eslint-sh/issues/3.
+ * Tests for {@link resolveWord} against its acceptance criteria.
  *
  * All expected values in the positive/negative tables below are hand-derived
  * from the Bash Reference Manual (never captured from running this
@@ -662,17 +661,14 @@ describe("resolveWord — synthetic-input edge cases (not producible by this bri
   });
 });
 
-describe('resolveWord — consumer specifier: "sh-ast/analyze" subpath resolves like the test-relative import', () => {
-  it('resolveWord imported from the "sh-ast/analyze" package specifier behaves identically', async () => {
+describe('resolveWord — consumer specifier: "sh-analysis" resolves like the test-relative import', () => {
+  it('resolveWord imported from the "sh-analysis" package specifier behaves identically', async () => {
     // Every other test in this file imports resolveWord via a
-    // test-relative path (`../src/analyze/index.js`), which exercises the
-    // module's logic but never the package's public subpath resolution
-    // (`package.json#exports["./analyze"]`) that real consumers actually
-    // go through. This test imports via the real public specifier instead
-    // — the package "sh-ast" resolving to itself works here because this
-    // is itself a workspace package, giving self-referencing subpath
-    // resolution as close to a real external consumer's import as this
-    // repo's test infra allows.
+    // test-relative path, which exercises the module's logic but never the
+    // package's public `exports` resolution that real consumers go through.
+    // This test imports via the real public specifier instead: the package
+    // resolving to itself gives self-referencing resolution as close to a
+    // real external consumer's import as this repo's test setup allows.
     const { resolveWord: publicResolveWord } = await import("sh-analysis");
     const word = argWord("rm");
     expect(publicResolveWord(word)).toEqual({ static: true, text: "rm" });
