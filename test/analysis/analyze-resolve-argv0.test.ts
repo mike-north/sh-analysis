@@ -1,8 +1,7 @@
 /**
- * Tests for {@link resolveArgv0} (`sh-ast/analyze`) against the acceptance
- * criteria in https://github.com/mike-north/eslint-sh/issues/5.
+ * Tests for {@link resolveArgv0} against its acceptance criteria.
  *
- * Criterion -> test mapping (see this PR's description for the full table):
+ * Criterion -> test mapping:
  *
  *   1. Per-default-wrapper positive coverage — the `describe('resolveArgv0
  *      — criterion 1 ...')` block, one `it` per {@link DEFAULT_TRANSPARENT_WRAPPERS}
@@ -100,7 +99,7 @@ describe("resolveArgv0 — criterion 1: each default wrapper follows to its wrap
   });
 
   // POSIX `env` §env(1p): `env [-i] [name=value]... [utility [argument...]]`.
-  // The exact fixture from issue #5's body.
+  // The canonical wrapper-assignment fixture.
   it("env A=1 rm x -> effective rm, chain [env, rm]", () => {
     const resolution = resolveArgv0(site("env A=1 rm x"));
     expect(chainSummary(resolution)).toEqual(["env", "rm"]);
@@ -173,9 +172,8 @@ describe("resolveArgv0 — criterion 1: each default wrapper follows to its wrap
 });
 
 describe("resolveArgv0 — criterion 2: an unknowable word in the chain is never guessed through", () => {
-  // The security-critical invariant from issue #5 and design/RULES.md's
-  // no-dynamic-invocation spec ("sudo -u x \"$prog\"` (report — sudo is
-  // configured transparent, its target is dynamic)"): `sudo`'s wrapped
+  // The security-critical no-dynamic-invocation invariant (`sudo -u x "$prog"`:
+  // sudo is configured transparent, its target is dynamic): `sudo`'s wrapped
   // word is a `ParamExp` (`$prog`), so it can never be identified as a
   // further wrapper or resolved to static text. `resolveArgv0` must stop
   // there rather than falling back to `sudo` (or anything else) as the
@@ -558,7 +556,7 @@ describe("resolveArgv0 — review fix: command -v/-V stop the chain at command i
   });
 });
 
-describe("resolveArgv0 — wrappers named by absolute path are followed (issue #66)", () => {
+describe("resolveArgv0 — wrappers named by absolute path are followed (mike-north/sh-ast#66)", () => {
   // Criterion 1: an absolute path whose final segment is a wrapper name is
   // that wrapper. Expected chains are hand-derived from the source text.
   it("/usr/bin/env bash x -> follows env; the chain keeps the word as written (criterion 3)", () => {
@@ -911,7 +909,7 @@ describe("resolveArgv0 — review fix: malformed injected WrapperSpec entries th
     ).not.toThrow();
   });
 
-  it('exposes code === "SH_ANALYSIS_INVALID_WRAPPER_SPEC" (rename: eslint-sh#17)', () => {
+  it('exposes code === "SH_ANALYSIS_INVALID_WRAPPER_SPEC"', () => {
     const invoke = () =>
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Deliberately malformed JavaScript input must reach runtime validation despite the stricter public TypeScript contract.
       resolveArgv0(site("rm x"), { transparentWrappers: [{} as WrapperSpec] });
