@@ -15,7 +15,7 @@ import {
 import { tmpdir } from "node:os";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import test, { type TestContext } from "node:test";
-import { object, workflow } from "./support.ts";
+import { fixtureChangesetConfig, object, workflow } from "./support.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const policy =
@@ -69,7 +69,7 @@ function fixture(
   );
   writeFileSync(
     join(directory, ".changeset/config.json"),
-    readFileSync(join(root, ".changeset/config.json")),
+    fixtureChangesetConfig(root),
   );
   writeFileSync(
     join(directory, ".changeset/outcome.md"),
@@ -185,7 +185,7 @@ await test("no pending changesets permits tooling-only commits and prepared 0.x 
   }
 });
 
-await test("publication entry point enforces the same ceiling before checking dispatch identity", (t) => {
+await test("publication entry point enforces the same ceiling before checking push identity", (t) => {
   const directory = fixture(t);
   cpSync(join(root, "scripts"), join(directory, "scripts"), {
     recursive: true,
@@ -231,20 +231,24 @@ await test("CI runs both gates on every PR and main push, release guards before 
   const release = workflow(
     readFileSync(join(root, ".github/workflows/release.yml"), "utf8"),
   );
-  const steps = release.jobs.publish.steps;
-  const guard = steps.findIndex((step) => step.run === "pnpm check:release");
-  const publish = steps.findIndex((step) => step.run?.includes("npm publish"));
-  assert.ok(guard >= 0 && guard < publish);
-  assert.ok(!steps[guard]["continue-on-error"]);
+  const action = release.jobs.release.steps.find(
+    (step) =>
+      typeof step.uses === "string" &&
+      step.uses.startsWith("changesets/action@"),
+  );
+  assert.equal(action?.with.publish, "pnpm release");
   const scripts = object(
     object(JSON.parse(readFileSync(join(root, "package.json"), "utf8")))
       .scripts,
   );
-  assert.equal(typeof scripts["version:prepare"], "string");
-  const prepare = scripts["version:prepare"];
+  assert.equal(typeof scripts["version-packages"], "string");
+  const prepare = scripts["version-packages"];
   assert.ok(typeof prepare === "string");
   assert.match(
     prepare,
     /check:changesets.*check:versions.*changeset version.*check:versions/,
   );
+  const publish = scripts.release;
+  assert.ok(typeof publish === "string");
+  assert.match(publish, /check:release.*changeset publish/);
 });
