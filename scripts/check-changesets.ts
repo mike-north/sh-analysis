@@ -13,7 +13,9 @@ export function checkChangesets(root = process.cwd()): void {
       const path = join(directory, entry.name);
       if (entry.isDirectory()) visit(path);
       else if (entry.name.endsWith(".md") && entry.name !== "README.md") {
-        const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(
+        // The CLI writes an empty declaration as adjacent delimiter lines. Only the
+        // YAML document between full delimiter lines expresses release intent.
+        const frontmatter = /^---\r?\n((?:[^\n]*\n)*?)---(?:\r?\n|$)/.exec(
           readFileSync(path, "utf8"),
         );
         if (!frontmatter)

@@ -15,8 +15,3 @@ export function releaseRecord(
   }
   return value;
 }
-
-/** Release-plan elements remain unknown until each release's policy fields are inspected. */
-export function isReleaseList(value: unknown): value is readonly unknown[] {
-  return Array.isArray(value);
-}

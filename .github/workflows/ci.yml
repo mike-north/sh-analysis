@@ -11,11 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      # Changesets status resolves its configured baseBranch even when inspecting the complete pending plan.
-      - if: github.event_name == 'pull_request'
-        run: git branch main origin/main
       - uses: pnpm/action-setup@v4
         with:
           version: 11.12.0
