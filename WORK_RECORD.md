@@ -249,3 +249,130 @@ requires lead review; a local green run does not establish registry installabili
 hosted CI, downstream ESLint composition or release acceptance. No actual publish
 was run. Do not interpret historical Node24 or downstream composition receipts as
 new exact-head evidence.
+
+## 2026-11-06: snapshot release and strict test-project contracts
+
+Worker scope is gate-contracts, based exactly on approved extraction-tooling
+8d643dd76fdd28bc56840e22f4a039388842477d. Ancestor branches were not rewritten;
+771914213ea1f3f4d8c8d424ba7650000462c253 and
+3d7514eed58cfa2a74d49e6d96266b0a72e0cefb were audited through isolated archives.
+No pushes, GitHub writes, tags, main integration, publication, credentials, Claude
+sessions, product-source changes, or analysis API changes are in scope.
+
+Added intended-outcome regressions before production edits and retained actual
+red logs under scratch. Corrected fixture setup mistakes before accepting red
+receipts: absent intent uses an explicit null sentinel, every Git fixture owns
+its repository, and aggregate baselines pass with formatted helper injections.
+All three approved ancestors independently reject the CLI's exact empty changeset
+bytes and valid no-main snapshots and accept invalid numeric prerelease versions.
+The shared validator already rejected rc..1; the confirmed SemVer defect is numeric
+prerelease leading zeros. Extraction-tooling's aggregate check misses an imported
+test-d helper's TS7006 despite strict effective config. Its analysis-helper control
+fails correctly. The ts-standards ancestor's aggregate rejects a nested test helper;
+the release-gate ancestor has JavaScript tests, with no TypeScript test project.
+
+Snapshot version validation now always uses pinned public get-release-plan 4.0.16,
+which is also the planner resolved by installed Changesets CLI 2.29.8. It does not
+couple owner policy to status's Git eligibility/missing-changeset check. Empty
+plans pass, while real configuration/package errors still fail closed, including
+without pending declarations. Removed the obsolete CI history/main-ref workaround
+and assertions that required it. No release authorization or OIDC workflow changed.
+The intent parser accepts adjacent empty frontmatter delimiters and only checks
+YAML declaration values. Pinned semver 7.8.6 validates current/planned versions;
+exact spelling guards reject normalized v/whitespace inputs, numeric prerelease
+zeros are invalid, build zeros remain valid, and major zero is unconditional.
+
+The real CLI status oracle receives an independent same-snapshot main ref only in
+its copy, then CLI version prepares that copy and verifies every planned manifest.
+Regression coverage includes no-main and shallow detached minor/major/empty plans,
+ordinary consumed Version Packages history (already passing before correction),
+CLI-produced empty prerelease exit, actual next major at prerelease exit from a
+current 0.x snapshot, consumed prerelease plans and stable exit, dependent patches,
+and a peer-dependent inferred major while the requested package stays 0.x.
+No release JSON or CLI results are mocked. The shared version assertion also has
+strict malformed/current/planned-input coverage and valid prerelease/build controls.
+
+Aggregate check now invokes existing tsd, retaining all negative declaration
+assertions. All three effective test projects enforce strict/noImplicitAny. Isolated
+full-snapshot baseline checks and formatted helper injections exercise analysis,
+imported declaration helpers, and standalone declaration helpers; tsd's
+existing default discovery covers the standalone helper. Ordinary declaration tsc
+is used only as a diagnostic oracle for the injected TS7006, never as a replacement
+for expected-error-aware tsd. No compiler options or negative assertions weakened.
+
+Local tooling uses Node22.22.1/pnpm11.12.0. The permitted prospective binding SHA256
+8e0f057f91ca6aee91f619c947985d9e29e809abfec82bfae8b487c53c748532 was verified,
+as were all 78 installed members. Manifest remains sh-ast ^0.11.0; ordinary lock
+contains the real pinned tooling resolutions and deliberately no unavailable
+binding importer/resolution, local path, or invented integrity. The isolated frozen
+install fails specifically for that missing sh-ast specifier; a separate registry
+query still finds no matching 0.11.0. Environment-only
+pnpm_config_verify_deps_before_run=false supports the honest local installation.
+
+Full build/check/test and both gates are run locally against that artifact.
+Historical validation files, public API report, generated documentation, source
+semantics, responsibility map, and manual trusted-publisher workflow remain
+unchanged. Detailed commands, red/green receipts, exact final head, independent
+review provenance, and remaining registry/CI/acceptance limits are recorded in
+scratch/gate-contracts-report.md. Local artifact checks do not establish registry
+installability, hosted CI, downstream composition, or lead acceptance.
+
+## 2026-11-06: public Changesets v3 preparation stack
+
+Successor work starts exactly at gate-contracts
+8e35f6d0599135cd83f6ca61042913faea4e56c3. Scope is release/contributor tooling
+and intended-outcome regressions only. Historical receipts above describe v2
+and remain unchanged. No other repository or ancestor worktree was edited.
+
+Tests preceded implementation: the v3 pin expectation fails against installed
+CLI2.29.8; the new manifest-observation oracle first passes the existing no-main,
+shallow and workspace outcomes against v2. After installing v3, real CLI version
+preparation disproves the old peer1.0.0 expectation: core0.8.0 minor prepares0.9.0
+and dependent0.3.0 prepares0.3.1 for both ordinary and peer dependencies. Accepted
+red receipts exclude missing-dependency and missing-workspace-marker setup errors.
+The removed v2-helper import failure is a migration incompatibility, not evidence
+of a release-policy defect. Source-string implementation tests were removed at
+lead request; behavior and pin metadata remain the regression contract.
+
+The snapshot adapter composes named public assembleReleasePlan7.0.0,
+readConfig4.0.1, readChangesets1.0.1, readPreState3.0.0 and package discovery3.1.0,
+matching installed CLI3.0.3 resolutions. It handles config validation results
+explicitly, exposes warnings, and propagates discovery/read/assembly failures to
+the fail-closed gate. No since-ref, file-presence shortcut, compatibility export,
+planner approximation or direct CLI status call remains in production or tests.
+Every actual planned version still passes the unchanged exact SemVer and major0
+assertion. README's old planner-package description is updated only for this
+necessary contributor-tooling correction.
+
+Fresh v3 regression evidence compares complete adapter plans with manifests
+before/after real installed CLI version preparation in own-Git copies, without a
+main-ref eligibility workaround. The CLI's explicit no-unreleased-changesets exit1
+is accepted only with unchanged manifests; other CLI failures fail the oracle.
+Coverage includes unborn history/no main, shallow detached minor/major/empty,
+consumed ordinary preparation and empty next plan, pre enter/exit with no intent,
+pending major at pre exit from current0.x, consumed prerelease/stable exit,
+ordinary and peer bumps, and two-package plans containing an allowed bump and a
+blocked next1.0.0. Exact CLI add --empty bytes and prose-major controls, strict
+SemVer controls, invalid JSON and valid-JSON configuration errors, malformed
+changeset reads and unknown-package assembly errors remain covered.
+
+Node22.22.1/pnpm11.12 build, aggregate check, full test and both release gates pass
+against the verified prospective binding. Full test passes48 contract/tooling cases,
+814 analysis cases (Vitest maxWorkers2), and tsd. Clean isolated aggregate baseline
+passes; analysis, imported test-d and unimported test-d helper injections all fail
+with implicit-any diagnostics. No strictness directive or negative assertion was
+weakened. Installed binding matches all78 tarball members and the authorized SHA256.
+
+Manifest remains sh-ast ^0.11.0. Ordinary lock retains honest resolved v3 tooling,
+removes v2 planner/helper resolutions, and contains no binding resolution or local
+path. Fresh frozen/offline install fails only for the absent binding importer;
+fresh registry query finds no0.11.0. Environment-only
+pnpm_config_verify_deps_before_run=false enables prospective local checks, not
+registry proof. Source, API report, generated docs, historical validation, AGENTS,
+CLAUDE, configs, intent/SemVer policy and manual OIDC workflows are byte-identical
+to base. No push, GitHub write, tag, integration, dispatch, actual publication,
+credential-file read, Claude session or sub-worker launch occurred.
+
+Detailed fresh receipts, final head, matrix outcomes, independent review provenance
+and remaining hosted/frozen/acceptance limits are in scratch/changesets-v3-report.md.
+Lead owns independent exact-head checks, acceptance and merge.

@@ -25,7 +25,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "check": "concurrently --success all --names types,lint,api,knip,syncpack \"pnpm check:typecheck\" \"pnpm check:lint-ts\" \"pnpm check:api-report\" \"pnpm check:knip\" \"pnpm check:syncpack\" && pnpm check:test-types && pnpm check:format",
+    "check": "concurrently --success all --names types,lint,api,knip,syncpack \"pnpm check:typecheck\" \"pnpm check:lint-ts\" \"pnpm check:api-report\" \"pnpm check:knip\" \"pnpm check:syncpack\" && pnpm check:test-types && pnpm test:types && pnpm check:format",
     "test": "pnpm test:contracts && pnpm test:analysis && pnpm test:types",
     "check:release": "node --experimental-strip-types scripts/check-release.ts",
     "check:changesets": "node --experimental-strip-types scripts/check-changesets.ts",
@@ -46,23 +46,30 @@
     "check:test-types": "tsc -p tsconfig.test.json"
   },
   "devDependencies": {
-    "@changesets/cli": "2.29.8",
+    "@changesets/assemble-release-plan": "7.0.0",
+    "@changesets/cli": "3.0.3",
+    "@changesets/config": "4.0.1",
+    "@changesets/pre": "3.0.0",
+    "@changesets/read": "1.0.1",
     "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
+    "@manypkg/get-packages": "3.1.0",
     "@microsoft/api-documenter": "7.30.7",
     "@microsoft/api-extractor": "7.58.9",
     "@types/node": "22.19.0",
+    "@types/semver": "7.7.1",
     "concurrently": "10.0.3",
     "eslint": "9.39.5",
     "eslint-config-prettier": "10.1.8",
     "jiti": "2.6.1",
     "knip": "6.26.0",
     "prettier": "^3.9.10",
+    "semver": "7.8.6",
     "syncpack": "15.3.2",
+    "tsd": "^0.33.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "8.64.0",
-    "yaml": "^2.8.1",
-    "tsd": "^0.33.0",
-    "vitest": "^4.1.12"
+    "vitest": "^4.1.12",
+    "yaml": "^2.8.1"
   },
   "dependencies": {
     "sh-ast": "^0.11.0"
