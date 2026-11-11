@@ -231,12 +231,18 @@ await test("CI runs both gates on every PR and main push, release guards before 
   const release = workflow(
     readFileSync(join(root, ".github/workflows/release.yml"), "utf8"),
   );
-  const action = release.jobs.release.steps.find(
+  const action = release.jobs.publish.steps.find(
     (step) =>
       typeof step.uses === "string" &&
-      step.uses.startsWith("changesets/action@"),
+      step.uses.startsWith("changesets/action/publish@"),
   );
-  assert.equal(action?.with.publish, "pnpm release");
+  assert.equal(action?.with.script, "pnpm release");
+  const versionAction = release.jobs.version.steps.find(
+    (step) =>
+      typeof step.uses === "string" &&
+      step.uses.startsWith("changesets/action/version@"),
+  );
+  assert.equal(versionAction?.with.script, "pnpm version-packages");
   const scripts = object(
     object(JSON.parse(readFileSync(join(root, "package.json"), "utf8")))
       .scripts,
