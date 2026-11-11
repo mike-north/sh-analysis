@@ -1,5 +1,11 @@
 # sh-analysis
 
+## 0.1.2
+
+### Patch Changes
+
+- [#9](https://github.com/mike-north/sh-analysis/pull/9) [`978177d`](https://github.com/mike-north/sh-analysis/commit/978177d9ccb10969c047054358ce0bd2c6b5815e) Thanks [@mike-north](https://github.com/mike-north)! - Require Node.js 22.14 or later on the 22 line, or Node.js 24 or later.
+
 ## 0.1.1
 
 ### Patch Changes
