@@ -11,8 +11,10 @@ name: Release
 on:
   push:
     branches: [main]
-# One release run at a time. A queued run must not be cancelled: its selection runs against the
-# commit that triggered it and may be the one that publishes.
+# One release run at a time. A run already in progress is never cancelled, so a publish is not
+# interrupted. While one runs, a newer pending run replaces an older pending one. That is safe
+# because every run selects its mode from the repository state it checks out, so the surviving
+# run covers whatever the replaced run would have versioned or published.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
