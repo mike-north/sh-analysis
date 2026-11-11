@@ -258,3 +258,13 @@ await test("CI runs both gates on every PR and main push, release guards before 
   assert.ok(typeof publish === "string");
   assert.match(publish, /check:release.*changeset publish/);
 });
+
+/**
+ * @see https://github.com/changesets/changesets/blob/main/docs/config-file-options.md#privatepackages
+ */
+await test("Changesets config states that private packages are neither versioned nor tagged", () => {
+  const config = object(
+    JSON.parse(readFileSync(join(root, ".changeset/config.json"), "utf8")),
+  );
+  assert.deepEqual(config.privatePackages, { version: false, tag: false });
+});
