@@ -1,5 +1,9 @@
 # sh-analysis
 
+[![npm version](https://img.shields.io/npm/v/sh-analysis)](https://www.npmjs.com/package/sh-analysis)
+[![CI](https://github.com/mike-north/sh-analysis/actions/workflows/ci.yml/badge.svg)](https://github.com/mike-north/sh-analysis/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/sh-analysis)](LICENSE)
+
 Find every program a shell script runs, even behind `sudo`, `env` or `nice`, and know exactly
 when the answer is "can't tell", such as a command hidden in a variable or inside `bash -c '…'`.
 `sh-analysis` reads the syntax tree from [`sh-ast`](https://github.com/mike-north/sh-ast) and
@@ -10,7 +14,7 @@ a guess.
 
 It is for people who build linters, policy checkers and dependency harvesters for shell scripts.
 Regex scanning misses `$(...)` and pipelines and is fooled by quoting; this works on the real
-parse tree and never invents text it cannot know. Requires Node.js 22.14+; ESM, types included.
+parse tree and never invents text it cannot know. Requires Node.js 22.14 or later on the 22 line, or Node.js 24 or later; ESM, types included.
 
 ```sh
 npm install sh-analysis sh-ast
@@ -52,7 +56,7 @@ You parse with `sh-ast` and analyse with `sh-analysis`, so install both. `sh-ana
 
 ## Requirements
 
-- Node.js 22.14 or newer.
+- Node.js 22.14 or later on the 22 line, or Node.js 24 or later.
 - ESM only (`import`, not `require`).
 - TypeScript types are included.
 - Shell dialects are whatever `sh-ast` parses: Bash (the default), POSIX sh, mksh, Bats and Zsh.
