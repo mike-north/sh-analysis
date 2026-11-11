@@ -350,7 +350,7 @@ describe("resolveArgv0 — edge cases", () => {
 });
 
 describe("resolveArgv0 — an unrecognized flag-shaped word never becomes the effective command", () => {
-  // The root bug this fix wave addresses: `advancePastWrapperOperands`'s
+  // The bug these cases guard against: `advancePastWrapperOperands`'s
   // fallback used to treat ANY unplaceable word as the wrapped command —
   // for a static, flag-shaped word this table doesn't recognize, that
   // silently hid the real effective command behind a flag. Verified
