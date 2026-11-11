@@ -1,21 +1,19 @@
-# Publishing remains a deliberate action against main; bootstrap/staging versions are rejected.
+# Releases flow through Changesets: pending changesets on main produce a "Version Packages" pull
+# request, and merging it publishes to npm. npm trusted publishing is registered against exactly
+# this repository, this file name and no GitHub environment; renaming the file or adding an
+# `environment:` to the job breaks publication.
 name: Release
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: Exact prepared 0.x package version to publish
-        required: true
-        type: string
+  push:
+    branches: [main]
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
+  id-token: write
 jobs:
-  publish:
-    if: github.repository == 'mike-north/sh-analysis' && github.ref == 'refs/heads/main'
+  release:
+    if: github.repository == 'mike-north/sh-analysis'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -25,16 +23,15 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
-      # Node 24 is the publishing runtime; pin npm above the trusted-publishing minimum.
+      # Node 24 is the publishing runtime; pin npm above the trusted-publishing minimum (11.5.1).
       - run: npm install --global npm@11.21.1
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - run: pnpm check
-      - run: pnpm test
-      # Recheck declarations, all current/planned versions, and the exact dispatch identity before publication.
-      - run: pnpm check:release
+      - uses: changesets/action@v1
+        with:
+          version: pnpm version-packages
+          publish: pnpm release
+          title: Version Packages
+          commit: Version Packages
         env:
-          RELEASE_VERSION: ${{ inputs.version }}
-      - run: npm pack --dry-run
-      # npm exchanges GitHub OIDC for a short-lived publish credential.
-      - run: npm publish --access public
+          # The changelog generator reads pull request metadata with this token.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

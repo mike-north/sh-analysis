@@ -81,7 +81,7 @@ no changeset.
 - Describe what changed, why, and how you verified it. The [template](.github/pull_request_template.md)
   has the checklist.
 - CI must pass, and every pull request needs an approving review before it can merge.
-- Releases are published by the maintainer through a manual workflow. Contributions never
+- Releases are published when the maintainer merges the automated "Version Packages" pull request. Contributions never
   publish.
 
 ## Code of conduct
