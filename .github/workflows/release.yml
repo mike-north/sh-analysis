@@ -1,37 +1,108 @@
 # Releases flow through Changesets: pending changesets on main produce a "Version Packages" pull
-# request, and merging it publishes to npm. npm trusted publishing is registered against exactly
-# this repository, this file name and no GitHub environment; renaming the file or adding an
-# `environment:` to the job breaks publication.
+# request, and merging it publishes to npm, pushes a git tag per published package and creates a
+# GitHub Release for each. npm trusted publishing is registered against exactly this repository,
+# this file name and no GitHub environment; renaming the file or adding an `environment:` to the
+# publish job breaks publication.
+#
+# The work is split by authority so that the OIDC token exists only where npm publication happens:
+# `select-mode` reads state with no write access, `version` can write commits and pull requests,
+# and `publish` can write tags and releases and mint the OIDC token.
 name: Release
 on:
   push:
     branches: [main]
-permissions:
-  contents: write
-  pull-requests: write
-  id-token: write
+# One release run at a time. A run already in progress is never cancelled, so a publish is not
+# interrupted. While one runs, a newer pending run replaces an older pending one. That is safe
+# because every run selects its mode from the repository state it checks out, so the surviving
+# run covers whatever the replaced run would have versioned or published.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+# No authority by default; each job grants only its own.
+permissions: {}
 jobs:
-  release:
+  # Decides, without write access or OIDC, whether this main commit should open a version pull
+  # request, publish unpublished versions, or do nothing.
+  select-mode:
     if: github.repository == 'mike-north/sh-analysis'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      mode: ${{ steps.select-mode.outputs.mode }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
         with:
           version: 11.12.0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - uses: changesets/action/select-mode@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        id: select-mode
+  # Opens or updates the "Version Packages" pull request. Has no OIDC token.
+  version:
+    needs: select-mode
+    if: needs.select-mode.outputs.mode == 'version'
+    runs-on: ubuntu-latest
+    permissions:
+      # Write the version commit and create or update its pull request.
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+          # Changesets finds the commits that introduced each changeset, so it needs full history.
+          fetch-depth: 0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 11.12.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - uses: changesets/action/version@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        with:
+          script: pnpm version-packages
+          commit-message: Version Packages
+          pr-title: Version Packages
+          # The changelog generator reads pull request metadata with this token.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+  # Publishes to npm, then pushes tags and creates GitHub Releases. The only job with OIDC. It
+  # must not declare `environment:`, because npm trusted publishing is registered without one.
+  publish:
+    needs: select-mode
+    if: needs.select-mode.outputs.mode == 'publish'
+    runs-on: ubuntu-latest
+    permissions:
+      # Tags and GitHub Releases for what was published.
+      contents: write
+      # npm trusted publishing.
+      id-token: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 11.12.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           package-manager-cache: false
       # Node 24 is the publishing runtime; pin npm above the trusted-publishing minimum (11.5.1).
       - run: npm install --global npm@11.21.1
       - run: pnpm install --frozen-lockfile
-      - uses: changesets/action@v1
+      # `pnpm release` builds, checks, tests and runs the release guard before `changeset publish`.
+      - uses: changesets/action/publish@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
-          version: pnpm version-packages
-          publish: pnpm release
-          title: Version Packages
-          commit: Version Packages
-        env:
-          # The changelog generator reads pull request metadata with this token.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          script: pnpm release
+          create-github-releases: true
+          push-git-tags: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
