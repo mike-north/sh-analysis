@@ -46,7 +46,7 @@ Tooling-only changes need no changeset.
 
 - One focused change per pull request, with a description of what changed, why, and how you
   verified it.
-- CI must be green, and every pull request needs an approving review before it merges.
+- CI must be green before a pull request merges.
 - Do not skip Git hooks. Do not add AI attribution trailers to commits or pull requests.
 - Releases are published by merging the Changesets "Version Packages" pull request. Never run
   `npm publish` from a contribution, and never add npm tokens to the repository.

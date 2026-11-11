@@ -349,8 +349,8 @@ describe("resolveArgv0 — edge cases", () => {
   });
 });
 
-describe("resolveArgv0 — review fix: an unrecognized flag-shaped word never becomes the effective command", () => {
-  // The root bug this fix wave addresses: `advancePastWrapperOperands`'s
+describe("resolveArgv0 — an unrecognized flag-shaped word never becomes the effective command", () => {
+  // The bug these cases guard against: `advancePastWrapperOperands`'s
   // fallback used to treat ANY unplaceable word as the wrapped command —
   // for a static, flag-shaped word this table doesn't recognize, that
   // silently hid the real effective command behind a flag. Verified
@@ -408,7 +408,7 @@ describe("resolveArgv0 — review fix: an unrecognized flag-shaped word never be
   });
 });
 
-describe("resolveArgv0 — review fix: getopt-standard attached and clustered short-flag forms", () => {
+describe("resolveArgv0 — getopt-standard attached and clustered short-flag forms", () => {
   // Each form below is verified against the real utility empirically:
   // GNU coreutils env(1)/nice(1) locally (`genv -uFOO`, `genv -iv`,
   // `gnice -n10` — all confirmed to behave as modeled here), and sudo(8)'s
@@ -487,7 +487,7 @@ describe("resolveArgv0 — review fix: getopt-standard attached and clustered sh
   });
 });
 
-describe("resolveArgv0 — review fix: env -S/--split-string is unresolvable (splice semantics)", () => {
+describe("resolveArgv0 — env -S/--split-string is unresolvable (splice semantics)", () => {
   // GNU env(1) -S/--split-string splices its operand's own words into the
   // invoked command's argv (verified empirically: `env -S 'echo hello
   // world'` runs `echo` with args `hello`/`world`) — the real wrapped
@@ -527,7 +527,7 @@ describe("resolveArgv0 — review fix: env -S/--split-string is unresolvable (sp
   });
 });
 
-describe("resolveArgv0 — review fix: command -v/-V stop the chain at command itself (prints, never executes)", () => {
+describe("resolveArgv0 — command -v/-V stop the chain at command itself (prints, never executes)", () => {
   // Bash Reference Manual §4.1: `command -v`/`-V` print information about
   // `command_name` (its path, or a description) rather than execute it —
   // so nothing after `-v`/`-V` is ever the effective command.
@@ -792,7 +792,7 @@ describe("resolveArgv0 — wrappers named by absolute path are followed (mike-no
   });
 });
 
-describe("resolveArgv0 — review fix: truncated/malformed invocations resolve to the wrapper itself", () => {
+describe("resolveArgv0 — truncated/malformed invocations resolve to the wrapper itself", () => {
   it("sudo -u (trailing argFlag with no operand at all) -> effective is sudo itself", () => {
     const resolution = resolveArgv0(site("sudo -u"));
     expect(resolution.chain).toEqual([{ static: true, text: "sudo" }]);
@@ -812,7 +812,7 @@ describe("resolveArgv0 — review fix: truncated/malformed invocations resolve t
   });
 });
 
-describe("resolveArgv0 — review fix: a WrapperSpec with multiple names is followed through either alias", () => {
+describe("resolveArgv0 — a WrapperSpec with multiple names is followed through either alias", () => {
   it("a custom two-name wrapper resolves through its second, non-first name", () => {
     const aliasedWrapper: WrapperSpec = { names: ["run-safely", "rs"] };
     const customWrappers: readonly WrapperSpec[] = [
@@ -840,7 +840,7 @@ describe("resolveArgv0 — review fix: a WrapperSpec with multiple names is foll
   });
 });
 
-describe("resolveArgv0 — review fix: DEFAULT_TRANSPARENT_WRAPPERS is frozen", () => {
+describe("resolveArgv0 — DEFAULT_TRANSPARENT_WRAPPERS is frozen", () => {
   it("mutating a top-level entry throws (strict mode)", () => {
     const entry = DEFAULT_TRANSPARENT_WRAPPERS[0];
     expect(entry).toBeDefined();
@@ -868,7 +868,7 @@ describe("resolveArgv0 — review fix: DEFAULT_TRANSPARENT_WRAPPERS is frozen", 
   });
 });
 
-describe("resolveArgv0 — review fix: malformed injected WrapperSpec entries throw a typed error", () => {
+describe("resolveArgv0 — malformed injected WrapperSpec entries throw a typed error", () => {
   it.each([
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- Deliberately malformed JavaScript input must reach runtime validation despite the stricter public TypeScript contract.
     ["names missing entirely", {} as WrapperSpec],
@@ -934,7 +934,7 @@ describe("resolveArgv0 — review fix: malformed injected WrapperSpec entries th
   });
 });
 
-describe("resolveArgv0 — review fix: `--` ends option parsing for the rest of this wrapper scan (Copilot PR #16 review)", () => {
+describe("resolveArgv0 — `--` ends option parsing for the rest of this wrapper scan", () => {
   // Every wrapper's own manual page documents `--` as the standard
   // getopt(3)/getopt_long(3) end-of-options marker: once seen, everything
   // that follows is an ordinary operand, even if it's shaped like a flag
