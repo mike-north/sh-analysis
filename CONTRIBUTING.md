@@ -12,7 +12,7 @@ Thanks for helping. Bug reports, test cases from real scripts, and fixes are all
 
 ## Set up
 
-You need Node.js 22 (see `.nvmrc`) and pnpm 11.12 (`corepack enable` picks up the version from
+You need Node.js 22.14 or later on the 22 line, or Node.js 24 or later (`.nvmrc` pins 22) and pnpm 11.12 (`corepack enable` picks up the version from
 `package.json`).
 
 ```sh
