@@ -14,7 +14,7 @@ a guess.
 
 It is for people who build linters, policy checkers and dependency harvesters for shell scripts.
 Regex scanning misses `$(...)` and pipelines and is fooled by quoting; this works on the real
-parse tree and never invents text it cannot know. Requires Node.js 22.14+ (22 line) or 24+; ESM, types included.
+parse tree and never invents text it cannot know. Requires Node.js 22.14 or later on the 22 line, or Node.js 24 or later; ESM, types included.
 
 ```sh
 npm install sh-analysis sh-ast
