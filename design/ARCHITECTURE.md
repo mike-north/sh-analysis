@@ -91,9 +91,10 @@ observation or inventory; the consumer decides how to respond.
 
 ## Release and validation
 
-Publication is a deliberate, manually dispatched workflow on `main` using npm
-trusted publishing and an exact prepared 0.x version. Placeholder versions are
-rejected. Nothing publishes on push or pull request. Node 22 is the development
+Publication happens only when a Changesets "Version Packages" pull request is
+merged to `main`, using npm trusted publishing registered against the
+`release.yml` workflow with no GitHub environment. Placeholder and non-0.x
+versions are rejected. Pull requests never publish. Node 22 is the development
 runtime; Node 24 with npm 11.21.1 is the publishing runtime.
 
 Behavior tests assert outcomes derived from the shell manuals and from a real

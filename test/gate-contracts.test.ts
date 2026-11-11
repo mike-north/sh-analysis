@@ -16,7 +16,7 @@ import { tmpdir } from "node:os";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import test, { type TestContext } from "node:test";
 import { pathToFileURL } from "node:url";
-import { object } from "./support.ts";
+import { fixtureChangesetConfig, object } from "./support.ts";
 
 /** Ancestor audits supply archived scripts without changing any ancestor branch. */
 const root = resolve(import.meta.dirname, "..");
@@ -49,9 +49,9 @@ function fixture(t: TestContext, bump: string | null = "minor"): string {
     join(dir, "package.json"),
     JSON.stringify({ name: "fixture", version: "0.8.0", type: "module" }),
   );
-  cpSync(
-    join(root, ".changeset/config.json"),
+  writeFileSync(
     join(dir, ".changeset/config.json"),
+    fixtureChangesetConfig(root),
   );
   if (bump !== null)
     writeFileSync(

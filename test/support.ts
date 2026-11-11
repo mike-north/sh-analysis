@@ -1,5 +1,7 @@
 /** Validate external CLI and workflow data before tests use it as evidence. */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { parse } from "yaml";
 
 /** Workflow steps expose only the fields asserted by release-boundary tests. */
@@ -66,4 +68,15 @@ export function workflow(source: string): IWorkflow {
     jobs[name] = { ...job, steps };
   }
   return { on: object(parsed.on), permissions: parsed.permissions, jobs };
+}
+
+/**
+ * The repository's Changesets config with the built-in changelog generator. Fixture projects run
+ * `changeset version` offline, and the repository's GitHub generator needs network and a token.
+ */
+export function fixtureChangesetConfig(root: string): string {
+  const config = object(
+    JSON.parse(readFileSync(join(root, ".changeset/config.json"), "utf8")),
+  );
+  return JSON.stringify({ ...config, changelog: "@changesets/cli/changelog" });
 }

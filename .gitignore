@@ -6,3 +6,6 @@ temp/
 scratch/
 .DS_Store
 *.local.*
+
+# Claude Code local configuration (auto-added)
+.claude/*.local.*

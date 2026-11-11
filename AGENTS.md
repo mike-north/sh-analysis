@@ -48,7 +48,7 @@ Tooling-only changes need no changeset.
   verified it.
 - CI must be green, and every pull request needs an approving review before it merges.
 - Do not skip Git hooks. Do not add AI attribution trailers to commits or pull requests.
-- Releases are published by the maintainer through the manual release workflow. Never run
+- Releases are published by merging the Changesets "Version Packages" pull request. Never run
   `npm publish` from a contribution, and never add npm tokens to the repository.
 
 <!-- ecosystem-map:begin -->
