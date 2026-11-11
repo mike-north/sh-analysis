@@ -1,5 +1,11 @@
 # sh-analysis
 
+## 0.1.1
+
+### Patch Changes
+
+- [#6](https://github.com/mike-north/sh-analysis/pull/6) [`6252252`](https://github.com/mike-north/sh-analysis/commit/62522526d631cb1872f8dbaeda4e34695bb98180) Thanks [@mike-north](https://github.com/mike-north)! - Rewrite the README for users: what the package does, how to install it, a quickstart with real output, one section per task, and the limits of what it can know. Add package keywords, homepage and issue tracker links.
+
 ## 0.1.0
 
 ### Minor Changes
