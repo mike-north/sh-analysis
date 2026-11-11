@@ -93,7 +93,10 @@ observation or inventory; the consumer decides how to respond.
 
 Publication happens only when a Changesets "Version Packages" pull request is
 merged to `main`, using npm trusted publishing registered against the
-`release.yml` workflow with no GitHub environment. Placeholder and non-0.x
+`release.yml` workflow with no GitHub environment. The workflow selects a mode
+with read-only access, then either opens the version pull request or publishes;
+only the publish job can mint the OIDC token, and it also pushes a git tag and
+creates a GitHub Release for each published package. Placeholder and non-0.x
 versions are rejected. Pull requests never publish. Node 22 is the development
 runtime; Node 24 with npm 11.21.1 is the publishing runtime.
 

@@ -70,43 +70,147 @@ await test("release refuses placeholders, non-0.x versions and incorrect package
   );
 });
 
-await test("workflow releases on push to main through the Changesets action without a GitHub environment", () => {
+await test("workflow selects a mode, then versions or publishes in jobs with separate authority", () => {
   const source = readFileSync(".github/workflows/release.yml", "utf8");
   const workflow = readWorkflow(source);
   // npm trusted publishing is registered against this file name with no environment.
   assert.deepEqual(Object.keys(workflow.on), ["push"]);
   assert.deepEqual(object(workflow.on.push).branches, ["main"]);
-  assert.deepEqual(workflow.permissions, {
+  // No workflow-wide authority: every job grants itself only what it needs.
+  assert.deepEqual(workflow.permissions, {});
+  assert.deepEqual(Object.keys(workflow.jobs), [
+    "select-mode",
+    "version",
+    "publish",
+  ]);
+  const { "select-mode": select, version, publish } = workflow.jobs;
+
+  // Per-job permissions, from the action's documented requirements: selection reads only,
+  // versioning writes the version commit and its pull request, publication writes tags and
+  // releases and is the only job that may mint the OIDC token.
+  assert.deepEqual(select.permissions, { contents: "read" });
+  assert.deepEqual(version.permissions, {
     contents: "write",
     "pull-requests": "write",
+  });
+  assert.deepEqual(publish.permissions, {
+    contents: "write",
     "id-token": "write",
   });
-  const job = workflow.jobs.release;
-  assert.ok(job);
-  assert.equal(job["runs-on"], "ubuntu-latest");
-  assert.equal(job.environment, undefined);
-  assert.equal(job.if, "github.repository == 'mike-north/sh-analysis'");
+
+  // Only the publish job runs in the trusted-publisher context, which has no environment.
+  for (const job of [select, version, publish]) {
+    assert.equal(job.environment, undefined);
+    assert.equal(job["runs-on"], "ubuntu-latest");
+  }
+  assert.equal(select.if, "github.repository == 'mike-north/sh-analysis'");
+  assert.deepEqual(version.needs, "select-mode");
+  assert.deepEqual(publish.needs, "select-mode");
+  assert.equal(version.if, "needs.select-mode.outputs.mode == 'version'");
+  assert.equal(publish.if, "needs.select-mode.outputs.mode == 'publish'");
+
   assert.equal(stepsCacheDisabled(workflow), true);
   assert.doesNotMatch(source, /NPM_TOKEN|NODE_AUTH_TOKEN|--provenance/);
   assert.doesNotMatch(source, /workflow_dispatch|inputs\./);
-  const steps = job.steps;
-  assert.ok(
-    steps.some(
-      (step) =>
-        step.uses === "actions/setup-node@v4" &&
-        step.with["node-version"] === 24,
+  assert.doesNotMatch(source, /changesets\/action@/);
+
+  // Every third-party action is pinned by full commit SHA, and the three Changesets
+  // sub-actions share one SHA (v2.1.2) so selection, versioning and publication agree.
+  const everyUses = Object.values(workflow.jobs).flatMap((job) =>
+    job.steps.flatMap((step) =>
+      typeof step.uses === "string" ? [step.uses] : [],
     ),
   );
-  const action = steps.find(
-    (step) =>
-      typeof step.uses === "string" &&
-      step.uses.startsWith("changesets/action@"),
+  for (const uses of everyUses)
+    assert.match(uses, /^[^@]+@[0-9a-f]{40}$/, uses);
+  const changesetsRefs = everyUses.filter((uses) =>
+    uses.startsWith("changesets/action/"),
   );
-  assert.ok(action);
-  assert.equal(action.with.version, "pnpm version-packages");
-  assert.equal(action.with.publish, "pnpm release");
-  const install = steps.findIndex((step) => step.run?.includes("pnpm install"));
-  assert.ok(install >= 0 && install < steps.indexOf(action));
+  assert.deepEqual(changesetsRefs.map((uses) => uses.split("@")[0]).sort(), [
+    "changesets/action/publish",
+    "changesets/action/select-mode",
+    "changesets/action/version",
+  ]);
+  assert.deepEqual(
+    [...new Set(changesetsRefs.map((uses) => uses.split("@")[1]))],
+    ["ae32849d5ba541f9ae29e40e22a623bc13562f51"],
+  );
+  assert.match(source, /changesets\/action\/\S+@\S+ # v2\.1\.2/);
+
+  for (const job of [select, version, publish]) {
+    const setup = job.steps.find(
+      (step) =>
+        typeof step.uses === "string" &&
+        step.uses.startsWith("actions/setup-node@"),
+    );
+    assert.equal(setup?.with["node-version"], 24);
+    // The action pushes through the GitHub API; no job needs persisted checkout credentials.
+    const checkout = job.steps.find(
+      (step) =>
+        typeof step.uses === "string" &&
+        step.uses.startsWith("actions/checkout@"),
+    );
+    assert.equal(checkout?.with["persist-credentials"], false);
+  }
+  assert.equal(
+    version.steps.find((step) => String(step.uses).includes("checkout"))?.with[
+      "fetch-depth"
+    ],
+    0,
+  );
+
+  const action = (job: typeof publish, name: string) => {
+    const found = job.steps.find(
+      (step) =>
+        typeof step.uses === "string" &&
+        step.uses.startsWith(`changesets/action/${name}@`),
+    );
+    assert.ok(found, name);
+    return found;
+  };
+  assert.equal(action(version, "version").with.script, "pnpm version-packages");
+  assert.equal(action(version, "version").with["pr-title"], "Version Packages");
+  assert.equal(
+    action(version, "version").with["commit-message"],
+    "Version Packages",
+  );
+  // The changelog generator reads pull request metadata with the workflow token.
+  assert.equal(
+    action(version, "version").with["github-token"],
+    "${{ secrets.GITHUB_TOKEN }}",
+  );
+
+  // Publication runs the guarded release script, and asks the action for the tags and GitHub
+  // Releases that the Changesets CLI 3 no longer announces in its own output.
+  const publishAction = action(publish, "publish");
+  assert.equal(publishAction.with.script, "pnpm release");
+  assert.equal(publishAction.with["create-github-releases"], true);
+  assert.equal(publishAction.with["push-git-tags"], true);
+  assert.equal(
+    publishAction.with["github-token"],
+    "${{ secrets.GITHUB_TOKEN }}",
+  );
+  const publishInstall = publish.steps.findIndex((step) =>
+    step.run?.includes("pnpm install --frozen-lockfile"),
+  );
+  assert.ok(
+    publishInstall >= 0 &&
+      publishInstall < publish.steps.indexOf(publishAction),
+  );
+  // Node 24 publishes; npm is pinned above the trusted-publishing minimum (11.5.1).
+  assert.ok(
+    publish.steps.some((step) =>
+      step.run?.includes("npm install --global npm@11."),
+    ),
+  );
+
+  // OIDC and the OIDC-capable steps exist only in publication.
+  assert.doesNotMatch(JSON.stringify(select), /id-token/);
+  assert.doesNotMatch(JSON.stringify(version), /id-token/);
+  assert.equal(
+    select.steps.some((step) => step.run?.includes("pnpm release")),
+    false,
+  );
 });
 
 await test("release script builds, checks, tests and guards before changeset publish", () => {
@@ -159,12 +263,20 @@ await test("release package contains executable and declaration entry points fro
 
 /** Publishing must install from the checked-in lock rather than restored caches. */
 function stepsCacheDisabled(workflow: IWorkflow) {
-  const setup = workflow.jobs.release.steps.find(
-    (step) => step.uses === "actions/setup-node@v4",
+  const setups = Object.values(workflow.jobs).flatMap((job) =>
+    job.steps.filter(
+      (step) =>
+        typeof step.uses === "string" &&
+        step.uses.startsWith("actions/setup-node@"),
+    ),
   );
   return (
-    setup?.with["package-manager-cache"] === false &&
-    setup.with.cache === undefined
+    setups.length > 0 &&
+    setups.every(
+      (setup) =>
+        setup.with["package-manager-cache"] === false &&
+        setup.with.cache === undefined,
+    )
   );
 }
 
