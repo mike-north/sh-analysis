@@ -1,0 +1,2466 @@
+[
+  {
+    "src": "cmd rm",
+    "variant": 1
+  },
+  {
+    "src": "command -p rm x",
+    "variant": null
+  },
+  {
+    "src": "cmd 'rm'",
+    "variant": 1
+  },
+  {
+    "src": "cmd \"rm\"",
+    "variant": 1
+  },
+  {
+    "src": "cmd 'r'm",
+    "variant": 1
+  },
+  {
+    "src": "cmd r\"m\"",
+    "variant": 1
+  },
+  {
+    "src": "cmd 'r'\"m\"z",
+    "variant": 1
+  },
+  {
+    "src": "cmd r\\m",
+    "variant": 1
+  },
+  {
+    "src": "cmd rm\\ -rf",
+    "variant": 1
+  },
+  {
+    "src": "cmd \\*",
+    "variant": 1
+  },
+  {
+    "src": "cmd \"a\\qb\"",
+    "variant": 1
+  },
+  {
+    "src": "cmd \"a\\\"b\"",
+    "variant": 1
+  },
+  {
+    "src": "cmd \"a\\$b\"",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\a'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\b'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\e'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\E'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\f'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\n'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\r'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\t'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\v'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\\\'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\''",
+    "variant": 1
+  },
+  {
+    "src": "exec -a myname rm x",
+    "variant": null
+  },
+  {
+    "src": "cmd $'\\\"'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\?'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\101'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\x41'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\u0041'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\U00000041'",
+    "variant": 1
+  },
+  {
+    "src": "env A=1 rm x",
+    "variant": null
+  },
+  {
+    "src": "cmd $'\\U0001F389'",
+    "variant": 1
+  },
+  {
+    "src": "nohup rm x",
+    "variant": null
+  },
+  {
+    "src": "cmd $'\\cA'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\t\\n'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'rm'",
+    "variant": 1
+  },
+  {
+    "src": "nice -n 10 rm x",
+    "variant": null
+  },
+  {
+    "src": "cmd $'\\UFFFFFFFF'",
+    "variant": 1
+  },
+  {
+    "src": "nice -10 rm x",
+    "variant": null
+  },
+  {
+    "src": "cmd $'\\U00110000'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $'\\U0010FFFF'",
+    "variant": 1
+  },
+  {
+    "src": "\"time\" -p rm x",
+    "variant": null
+  },
+  {
+    "src": "cmd $'\\uD800'",
+    "variant": 1
+  },
+  {
+    "src": "cmd $x",
+    "variant": 1
+  },
+  {
+    "src": "timeout -k 5 10 rm x",
+    "variant": null
+  },
+  {
+    "src": "cmd ${x}",
+    "variant": 1
+  },
+  {
+    "src": "sudo -u alice rm x",
+    "variant": null
+  },
+  {
+    "src": "cmd ${X:-default}",
+    "variant": 1
+  },
+  {
+    "src": "cmd $(cmd)",
+    "variant": 1
+  },
+  {
+    "src": "sudo -u x \"$prog\"",
+    "variant": null
+  },
+  {
+    "src": "cmd `cmd`",
+    "variant": 1
+  },
+  {
+    "src": "cmd $((1+1))",
+    "variant": 1
+  },
+  {
+    "src": "cmd $((RANDOM))",
+    "variant": 1
+  },
+  {
+    "src": "cmd <(cmd)",
+    "variant": 1
+  },
+  {
+    "src": "cmd >(cmd)",
+    "variant": 1
+  },
+  {
+    "src": "\"$cmd\" arg",
+    "variant": null
+  },
+  {
+    "src": "cmd \"a$b\"",
+    "variant": 1
+  },
+  {
+    "src": "cmd \"$(cmd)\"",
+    "variant": 1
+  },
+  {
+    "src": "cmd ~",
+    "variant": 1
+  },
+  {
+    "src": "cmd ~user",
+    "variant": 1
+  },
+  {
+    "src": "cmd ~/path",
+    "variant": 1
+  },
+  {
+    "src": "cmd ~\"foo\"",
+    "variant": 1
+  },
+  {
+    "src": "cmd *.txt",
+    "variant": 1
+  },
+  {
+    "src": "nohup env A=1 \"$cmd\" arg",
+    "variant": null
+  },
+  {
+    "src": "cmd ?",
+    "variant": 1
+  },
+  {
+    "src": "cmd a?b",
+    "variant": 1
+  },
+  {
+    "src": "cmd @(foo|bar)",
+    "variant": 1
+  },
+  {
+    "src": "cmd a[bc]d",
+    "variant": 1
+  },
+  {
+    "src": "FOO=bar rm x",
+    "variant": null
+  },
+  {
+    "src": "cmd [abc]",
+    "variant": 1
+  },
+  {
+    "src": "cmd [!abc]",
+    "variant": 1
+  },
+  {
+    "src": "cmd [^abc]",
+    "variant": 1
+  },
+  {
+    "src": "cmd a[\"b\"]",
+    "variant": 1
+  },
+  {
+    "src": "FOO=bar BAZ=qux rm x",
+    "variant": null
+  },
+  {
+    "src": "cmd a~b",
+    "variant": 1
+  },
+  {
+    "src": "cmd \\~foo",
+    "variant": 1
+  },
+  {
+    "src": "cmd \"~foo\"",
+    "variant": 1
+  },
+  {
+    "src": "cmd a\\*b",
+    "variant": 1
+  },
+  {
+    "src": "cmd a\\?b",
+    "variant": 1
+  },
+  {
+    "src": "FOO=bar env A=1 rm x",
+    "variant": null
+  },
+  {
+    "src": "cmd '*.txt'",
+    "variant": 1
+  },
+  {
+    "src": "cmd \"*.txt\"",
+    "variant": 1
+  },
+  {
+    "src": "cmd a[bc",
+    "variant": 1
+  },
+  {
+    "src": "with-retry rm x",
+    "variant": null
+  },
+  {
+    "src": "cmd a]b",
+    "variant": 1
+  },
+  {
+    "src": "cmd a'['bc']'d",
+    "variant": 1
+  },
+  {
+    "src": "cmd $\"hello\"",
+    "variant": 1
+  },
+  {
+    "src": "cmd \"hello\"",
+    "variant": 1
+  },
+  {
+    "src": "cmd $\"hi $x\"",
+    "variant": 1
+  },
+  {
+    "src": "PATH=/foo:~/bar",
+    "variant": 1
+  },
+  {
+    "src": "nohup env A=1 command rm x",
+    "variant": null
+  },
+  {
+    "src": "sudo env nice nohup command rm x",
+    "variant": null
+  },
+  {
+    "src": "PATH=/foo/bar",
+    "variant": 1
+  },
+  {
+    "src": "env A=1 café🎉 x",
+    "variant": null
+  },
+  {
+    "src": "cmd a:~b",
+    "variant": 1
+  },
+  {
+    "src": "cmd ~/bar",
+    "variant": 1
+  },
+  {
+    "src": "env",
+    "variant": null
+  },
+  {
+    "src": "cmd a\\:~b",
+    "variant": 1
+  },
+  {
+    "src": "cmd a:\\~b",
+    "variant": 1
+  },
+  {
+    "src": "command env A=1 rm x",
+    "variant": null
+  },
+  {
+    "src": "cmd 🎉",
+    "variant": 1
+  },
+  {
+    "src": "rm -rf x",
+    "variant": null
+  },
+  {
+    "src": "cmd 你好",
+    "variant": 1
+  },
+  {
+    "src": "env --unset=FOO rm x",
+    "variant": null
+  },
+  {
+    "src": "cmd é",
+    "variant": 1
+  },
+  {
+    "src": "sudo -- rm x",
+    "variant": null
+  },
+  {
+    "src": "cmd 'héllo'wörld",
+    "variant": 1
+  },
+  {
+    "src": "command -x rm x",
+    "variant": null
+  },
+  {
+    "src": "exec -x rm x",
+    "variant": null
+  },
+  {
+    "src": "nohup -x rm x",
+    "variant": null
+  },
+  {
+    "src": "nice -x rm x",
+    "variant": null
+  },
+  {
+    "src": "\"time\" -x rm x",
+    "variant": null
+  },
+  {
+    "src": "echo hi",
+    "variant": null
+  },
+  {
+    "src": "timeout -x rm x",
+    "variant": null
+  },
+  {
+    "src": "sudo -D /tmp rm x",
+    "variant": null
+  },
+  {
+    "src": "sudo --preserve-env=HOME rm x",
+    "variant": null
+  },
+  {
+    "src": "env --default-signal rm x",
+    "variant": null
+  },
+  {
+    "src": "env someOrdinaryCommand x",
+    "variant": null
+  },
+  {
+    "src": "nohup env --default-signal rm x",
+    "variant": null
+  },
+  {
+    "src": "sudo -ualice rm x",
+    "variant": null
+  },
+  {
+    "src": "sudo -Eu alice rm x",
+    "variant": null
+  },
+  {
+    "src": "sudo -Eualice rm x",
+    "variant": null
+  },
+  {
+    "src": "nice -n10 rm x",
+    "variant": null
+  },
+  {
+    "src": "env -uFOO rm x",
+    "variant": null
+  },
+  {
+    "src": "env -iv rm x",
+    "variant": null
+  },
+  {
+    "src": "exec -aFOO rm x",
+    "variant": null
+  },
+  {
+    "src": "exec -cl rm x",
+    "variant": null
+  },
+  {
+    "src": "timeout -k5 10 rm x",
+    "variant": null
+  },
+  {
+    "src": "\"time\" -ofile rm x",
+    "variant": null
+  },
+  {
+    "src": "sudo -Ex rm x",
+    "variant": null
+  },
+  {
+    "src": "env -S 'rm -rf' x",
+    "variant": null
+  },
+  {
+    "src": "env --split-string=cmd x",
+    "variant": null
+  },
+  {
+    "src": "env -Secho x",
+    "variant": null
+  },
+  {
+    "src": "env -S 'echo hi'",
+    "variant": null
+  },
+  {
+    "src": "command -v rm x",
+    "variant": null
+  },
+  {
+    "src": "command -V rm x",
+    "variant": null
+  },
+  {
+    "src": "command rm x",
+    "variant": null
+  },
+  {
+    "src": "command -p -v rm x",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/env bash x",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/env /usr/sbin/useradd bob",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/sudo -u alice rm x",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/nice -n 5 rm x",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/env -i A=1 rm x",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/nohup env /usr/bin/nice rm x",
+    "variant": null
+  },
+  {
+    "src": "/usr//bin/env rm x",
+    "variant": null
+  },
+  {
+    "src": "\"/usr/bin/env\" rm x",
+    "variant": null
+  },
+  {
+    "src": "/opt/日本語/🚀/env rm x",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/envé rm x",
+    "variant": null
+  },
+  {
+    "src": "bin/env rm x",
+    "variant": null
+  },
+  {
+    "src": "./sudo -u alice rm x",
+    "variant": null
+  },
+  {
+    "src": "../env rm x",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/env/ rm x",
+    "variant": null
+  },
+  {
+    "src": "/ rm x",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/printenv rm x",
+    "variant": null
+  },
+  {
+    "src": "\"$dir/env\" rm x",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/$tool rm x",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/env \"$cmd\" x",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/env rm x",
+    "variant": null
+  },
+  {
+    "src": "./with-retry rm x",
+    "variant": null
+  },
+  {
+    "src": "/opt/with-retry -q task",
+    "variant": null
+  },
+  {
+    "src": "./with-retry -n 3 task",
+    "variant": null
+  },
+  {
+    "src": "/opt/with-retry/ task",
+    "variant": null
+  },
+  {
+    "src": "/opt/tools/with-retry -n 3 task",
+    "variant": null
+  },
+  {
+    "src": "./with-retry task",
+    "variant": null
+  },
+  {
+    "src": "bin/with-retry task",
+    "variant": null
+  },
+  {
+    "src": "/opt/tools/with-retry/ task",
+    "variant": null
+  },
+  {
+    "src": "/other/with-retry task",
+    "variant": null
+  },
+  {
+    "src": "sudo -u",
+    "variant": null
+  },
+  {
+    "src": "env -u",
+    "variant": null
+  },
+  {
+    "src": "timeout -k 5",
+    "variant": null
+  },
+  {
+    "src": "rs rm x",
+    "variant": null
+  },
+  {
+    "src": "run-safely rm x",
+    "variant": null
+  },
+  {
+    "src": "rm x",
+    "variant": null
+  },
+  {
+    "src": "sudo -- -u alice rm",
+    "variant": null
+  },
+  {
+    "src": "env -- -i cmd",
+    "variant": null
+  },
+  {
+    "src": "timeout -- 10 rm x",
+    "variant": null
+  },
+  {
+    "src": "command -- -v rm",
+    "variant": null
+  },
+  {
+    "src": "/tmp/command eval \"$x\"",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/command cd /tmp",
+    "variant": null
+  },
+  {
+    "src": "/tmp/exec foo",
+    "variant": null
+  },
+  {
+    "src": "/tmp/command \"$cmd\" x",
+    "variant": null
+  },
+  {
+    "src": "command eval \"$x\"",
+    "variant": null
+  },
+  {
+    "src": "exec foo",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/env task",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/sudo task",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/nice task",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/nohup task",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/timeout 10 task",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/time task",
+    "variant": null
+  },
+  {
+    "src": "commandish task",
+    "variant": null
+  },
+  {
+    "src": "executable task",
+    "variant": null
+  },
+  {
+    "src": "/tmp/commandish task",
+    "variant": null
+  },
+  {
+    "src": "/tmp/executable task",
+    "variant": null
+  },
+  {
+    "src": "/tmp/envish task",
+    "variant": null
+  },
+  {
+    "src": "builtin task",
+    "variant": null
+  },
+  {
+    "src": "/explicit/builtin task",
+    "variant": null
+  },
+  {
+    "src": "/tmp/builtin task",
+    "variant": null
+  },
+  {
+    "src": "./builtin task",
+    "variant": null
+  },
+  {
+    "src": "builtinish task",
+    "variant": null
+  },
+  {
+    "src": "/explicit/builtin/ task",
+    "variant": null
+  },
+  {
+    "src": "/tmp/command task",
+    "variant": null
+  },
+  {
+    "src": "builtin -q task",
+    "variant": null
+  },
+  {
+    "src": "/tmp/builtin -q task",
+    "variant": null
+  },
+  {
+    "src": "task",
+    "variant": null
+  },
+  {
+    "src": "ordinary task",
+    "variant": null
+  },
+  {
+    "src": "a && b || c | d",
+    "variant": null
+  },
+  {
+    "src": "bash -c \"$x\"",
+    "variant": null
+  },
+  {
+    "src": "a | b |& c",
+    "variant": null
+  },
+  {
+    "src": "(a; b)",
+    "variant": null
+  },
+  {
+    "src": "echo \"$(sub)\"",
+    "variant": null
+  },
+  {
+    "src": "bash -ec 'ls'",
+    "variant": null
+  },
+  {
+    "src": "echo <(sub)",
+    "variant": null
+  },
+  {
+    "src": "sh -c ls",
+    "variant": null
+  },
+  {
+    "src": "if c1; then t1; elif c2; then t2; else e1; fi",
+    "variant": null
+  },
+  {
+    "src": "bash -xec 'ls'",
+    "variant": null
+  },
+  {
+    "src": "bash -ce 'ls'",
+    "variant": null
+  },
+  {
+    "src": "bash -lc 'ls'",
+    "variant": null
+  },
+  {
+    "src": "bash -e -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "bash -o pipefail -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "case $x in a) c1;; b) c2;; esac",
+    "variant": null
+  },
+  {
+    "src": "bash +o nounset -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "bash -eo pipefail -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "bash -oc errexit 'ls'",
+    "variant": null
+  },
+  {
+    "src": "for i in 1 2; do body1; done",
+    "variant": null
+  },
+  {
+    "src": "dash -oc errexit 'ls'",
+    "variant": null
+  },
+  {
+    "src": "while cond2; do body2; done",
+    "variant": null
+  },
+  {
+    "src": "bash -c -- 'ls'",
+    "variant": null
+  },
+  {
+    "src": "greet() { fb; }",
+    "variant": null
+  },
+  {
+    "src": "bash -O extglob -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "bg &",
+    "variant": null
+  },
+  {
+    "src": "! neg",
+    "variant": null
+  },
+  {
+    "src": "bash +O extglob -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "coproc cp { cpbody; }",
+    "variant": null
+  },
+  {
+    "src": "bash --norc -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "bash --rcfile /dev/null -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "time timed",
+    "variant": null
+  },
+  {
+    "src": "bash --init-file /dev/null -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "echo \"prefix $(hidden arg) suffix\"",
+    "variant": null
+  },
+  {
+    "src": "bash +c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "sh --rcfile f -c 'echo RAN'",
+    "variant": null
+  },
+  {
+    "src": "diff <(left) <(right)",
+    "variant": null
+  },
+  {
+    "src": "sh --init-file f -c 'echo RAN'",
+    "variant": null
+  },
+  {
+    "src": "sh --norc -c 'echo RAN'",
+    "variant": null
+  },
+  {
+    "src": "cat < <(hidden)",
+    "variant": null
+  },
+  {
+    "src": "zsh +ec 'ls'",
+    "variant": null
+  },
+  {
+    "src": "dash -c ls",
+    "variant": null
+  },
+  {
+    "src": "case $(sub) in x) : ;; esac",
+    "variant": null
+  },
+  {
+    "src": "zsh -c ls",
+    "variant": null
+  },
+  {
+    "src": "ksh -c ls",
+    "variant": null
+  },
+  {
+    "src": "ksh93 -c ls",
+    "variant": null
+  },
+  {
+    "src": "for i in $(sub); do :; done",
+    "variant": null
+  },
+  {
+    "src": "mksh -c ls",
+    "variant": null
+  },
+  {
+    "src": "zsh -oerrexit -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "ksh -oerrexit -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "[[ $(sub) = x ]]",
+    "variant": null
+  },
+  {
+    "src": "mksh -oerrexit -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "zsh -o errexit -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "ksh -co errexit 'ls'",
+    "variant": null
+  },
+  {
+    "src": "sudo bash -c ls",
+    "variant": null
+  },
+  {
+    "src": "env bash -c ls",
+    "variant": null
+  },
+  {
+    "src": "env A=1 sh -lc ls",
+    "variant": null
+  },
+  {
+    "src": "(( $(sub) ))",
+    "variant": null
+  },
+  {
+    "src": "nohup dash -c ls",
+    "variant": null
+  },
+  {
+    "src": "command bash -c ls",
+    "variant": null
+  },
+  {
+    "src": "exec -a x zsh -c ls",
+    "variant": null
+  },
+  {
+    "src": "sudo -u root env FOO=1 bash -ec ls",
+    "variant": null
+  },
+  {
+    "src": "bash -c '🎉'",
+    "variant": null
+  },
+  {
+    "src": "bash -o '名' -c '🎉 名'",
+    "variant": null
+  },
+  {
+    "src": "#!/bin/bash\n# A leading comment, for Comment coverage.\necho \"hello $USER, you are ${USER:-nobody}\" 'and single quoted'\necho \"${USER:1:2}\" \"${USER/foo/bar}\"\n\nx=1\ny=$((x + 2))\nz=$(( (1 + 2) * 3 ))\n((x++))\n\nif [ -n \"$x\" ]; then\n  echo yes\nelif [ -z \"$x\" ]; then\n  echo no\nelse\n  echo maybe\nfi\n\nwhile read -r line; do\n  echo \"$line\"\ndone < \"$0\"\n\nfor i in 1 2 3; do\n  echo \"$i\"\ndone\n\nfor ((i = 0; i < 3; i++)); do\n  echo \"$i\"\ndone\n\ngreet() {\n  echo \"in function\"\n}\ngreet\n\n(echo in a subshell)\n\necho one && echo two || echo three\n\ncase \"$x\" in\n  a | b) echo ab ;;\n  *) echo default ;;\nesac\n\ndeclare -i n=5\narr=(one two three)\necho \"${arr[1]}\"\ndeclare -A assoc=([key]=value)\n\ntime echo timed\n\ncoproc worker { echo coproc body; }\n\nlet \"z2 = 1 + 2\"\n\necho ?(b)*(c)+(d)@(e)!(f)\n\ngreet >(cat)\ngreet < <(echo procsub)\n\n[[ -n \"$x\" && -z \"$y\" ]]\n[[ (-n \"$x\") ]]\n\necho \"$(echo command substitution)\"\n\ncat <<'HEREDOC'\nheredoc body\nHEREDOC\n\necho piped | wc -l\n\n! false\n\nsleep 0 &\n",
+    "variant": 1
+  },
+  {
+    "src": "bash script.sh",
+    "variant": null
+  },
+  {
+    "src": "bash",
+    "variant": null
+  },
+  {
+    "src": "bash -e script.sh",
+    "variant": null
+  },
+  {
+    "src": "bash -x script.sh",
+    "variant": null
+  },
+  {
+    "src": "bash -- -c",
+    "variant": null
+  },
+  {
+    "src": "bash -- -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "bash -o c script.sh",
+    "variant": null
+  },
+  {
+    "src": "bash -o errexit script.sh",
+    "variant": null
+  },
+  {
+    "src": "bash - -c",
+    "variant": null
+  },
+  {
+    "src": "bash -e script.sh -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "sh script.sh",
+    "variant": null
+  },
+  {
+    "src": "sh -- -c",
+    "variant": null
+  },
+  {
+    "src": "zsh -oc errexit 'ls'",
+    "variant": null
+  },
+  {
+    "src": "ksh -oc errexit 'ls'",
+    "variant": null
+  },
+  {
+    "src": "mksh -oc errexit 'ls'",
+    "variant": null
+  },
+  {
+    "src": "mksh +c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "bash -c",
+    "variant": null
+  },
+  {
+    "src": "bash -ec",
+    "variant": null
+  },
+  {
+    "src": "bash -c -e",
+    "variant": null
+  },
+  {
+    "src": "bash -c --",
+    "variant": null
+  },
+  {
+    "src": "bash -oc errexit",
+    "variant": null
+  },
+  {
+    "src": "dash -c",
+    "variant": null
+  },
+  {
+    "src": "zsh -c",
+    "variant": null
+  },
+  {
+    "src": "ksh -co errexit",
+    "variant": null
+  },
+  {
+    "src": "zsh + -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "#!/bin/zsh\n# zsh-only fixture: FlagsArithm (subscript flags), unreachable in bash/mksh.\n# @see mvdan.cc/sh/v3/syntax filetests_test.go, `${signals[(i)QUIT]}`.\necho \"${signals[(i)QUIT]}\"\n",
+    "variant": 16
+  },
+  {
+    "src": "bash \"$script\"",
+    "variant": null
+  },
+  {
+    "src": "bash \"$opts\" -c 'ls'",
+    "variant": null
+  },
+  {
+    "src": "bash -c\"$y\" x",
+    "variant": null
+  },
+  {
+    "src": "#!/usr/bin/env bats\n# bats-only fixture: TestDecl (`@test` declarations), unreachable outside bats.\n@test \"addition works\" {\n  result=\"$((2 + 2))\"\n  [ \"$result\" -eq 4 ]\n}\n",
+    "variant": 8
+  },
+  {
+    "src": "bash \"$f\" -c x",
+    "variant": null
+  },
+  {
+    "src": "sudo bash -c",
+    "variant": null
+  },
+  {
+    "src": "first_cmd\nif cond_stmt; then in_then; fi\nfor i in 1; do in_loop; done\necho \"$(nested_last)\"",
+    "variant": null
+  },
+  {
+    "src": "mybash -c ls",
+    "variant": null
+  },
+  {
+    "src": "/bin/bash -c x",
+    "variant": null
+  },
+  {
+    "src": "/usr/local/bin/zsh -ec x",
+    "variant": null
+  },
+  {
+    "src": "sudo /bin/sh -c x",
+    "variant": null
+  },
+  {
+    "src": "/bin/bash script.sh",
+    "variant": null
+  },
+  {
+    "src": "/bin/notbash -c x",
+    "variant": null
+  },
+  {
+    "src": "/usr/bin/env bash -c x",
+    "variant": null
+  },
+  {
+    "src": "cmd < <(after)",
+    "variant": null
+  },
+  {
+    "src": "sudo /bin/bash -ec 'rm x'",
+    "variant": null
+  },
+  {
+    "src": "sudo env -S 'rm x'",
+    "variant": null
+  },
+  {
+    "src": "A=1 B=2 bash -c ls",
+    "variant": null
+  },
+  {
+    "src": "",
+    "variant": null
+  },
+  {
+    "src": "$cmd arg",
+    "variant": null
+  },
+  {
+    "src": "FOO=bar",
+    "variant": null
+  },
+  {
+    "src": "mybash -o x -c ls",
+    "variant": null
+  },
+  {
+    "src": "FOO=$(hidden)",
+    "variant": null
+  },
+  {
+    "src": "bash -c ls",
+    "variant": null
+  },
+  {
+    "src": "q +c ls",
+    "variant": null
+  },
+  {
+    "src": "q --conf file -c ls",
+    "variant": null
+  },
+  {
+    "src": "FOO=bar cmd arg",
+    "variant": null
+  },
+  {
+    "src": "ls",
+    "variant": null
+  },
+  {
+    "src": "cmd a:~/b",
+    "variant": null
+  },
+  {
+    "src": "scp host:~/path local",
+    "variant": null
+  },
+  {
+    "src": "cmd ~/b",
+    "variant": null
+  },
+  {
+    "src": "echo 你好🎉",
+    "variant": null
+  },
+  {
+    "src": "a && b",
+    "variant": null
+  },
+  {
+    "src": "a || b",
+    "variant": null
+  },
+  {
+    "src": "a | b",
+    "variant": null
+  },
+  {
+    "src": "a |& b",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-c' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-e' '-c' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-ec' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-xec' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-lc' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-o' 'pipefail' '-c' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '+o' 'nounset' '-c' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-eo' 'pipefail' '-c' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-oc' 'errexit' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-O' 'extglob' '-c' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '--norc' '-c' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '--rcfile' '/dev/null' '-c' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '+c' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-c' '--' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-c'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-ec'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-c' '-e'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-c' '--'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-oc' 'errexit'",
+    "variant": null
+  },
+  {
+    "src": "'bash' 's'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-e' 's'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-x' 's'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '--' '-c'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '--' '-c' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-o' 'c' 's'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '-' '-c' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "'bash' 's' '-c' 'echo $((40+2))'",
+    "variant": null
+  },
+  {
+    "src": "zsh --emulate sh -c 'echo 42'",
+    "variant": null
+  },
+  {
+    "src": "zsh --emulate ksh -c 'echo 42'",
+    "variant": null
+  },
+  {
+    "src": "zsh +-emulate zsh -c 'echo 42'",
+    "variant": null
+  },
+  {
+    "src": "env zsh --emulate sh -c 'echo 42'",
+    "variant": null
+  },
+  {
+    "src": "zsh --no-rcs -c 'echo 42'",
+    "variant": null
+  },
+  {
+    "src": "zsh +-rcs -c 'echo 42'",
+    "variant": null
+  },
+  {
+    "src": "zsh -bc 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "zsh -cb 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "zsh +bc 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "zsh -cx- 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "ksh -o -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "ksh +o -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "ksh -eo -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "ksh +eo -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "ksh -co -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "ksh93 +o -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "sudo ksh +o -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "zsh -b -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "zsh +b -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "zsh -eb -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "zsh -x- -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "zsh +x- -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "zsh +- -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "zsh -cb",
+    "variant": null
+  },
+  {
+    "src": "zsh -c -b",
+    "variant": null
+  },
+  {
+    "src": "zsh --emulate sh -c",
+    "variant": null
+  },
+  {
+    "src": "zsh --emulate",
+    "variant": null
+  },
+  {
+    "src": "ksh -o -- -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "ksh +o -- -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "ksh -oc errexit 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "ksh +o -c",
+    "variant": null
+  },
+  {
+    "src": "ksh -o +c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "ksh +o +c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "ksh -c +",
+    "variant": null
+  },
+  {
+    "src": "ksh -co",
+    "variant": null
+  },
+  {
+    "src": "ksh -o \"$option\" -c x",
+    "variant": null
+  },
+  {
+    "src": "bash +o -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "sh +o -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "dash +o -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "zsh +o -c 'echo X'",
+    "variant": null
+  },
+  {
+    "src": "q --mode value -c x",
+    "variant": null
+  },
+  {
+    "src": "q +-mode value -c x",
+    "variant": null
+  },
+  {
+    "src": "q +o -c x",
+    "variant": null
+  },
+  {
+    "src": "q -zc x",
+    "variant": null
+  },
+  {
+    "src": "q +z -c x",
+    "variant": null
+  },
+  {
+    "src": "q -c +",
+    "variant": null
+  },
+  {
+    "src": "q -c + x",
+    "variant": null
+  },
+  {
+    "src": "q -o -c x",
+    "variant": null
+  },
+  {
+    "src": "bash -c x",
+    "variant": null
+  },
+  {
+    "src": "./bash -c x",
+    "variant": null
+  },
+  {
+    "src": "q -c script",
+    "variant": null
+  },
+  {
+    "src": "bash -rcfile /dev/null s",
+    "variant": null
+  },
+  {
+    "src": "bash -init-file /dev/null s",
+    "variant": null
+  },
+  {
+    "src": "bash -restricted s",
+    "variant": null
+  },
+  {
+    "src": "bash -norc s",
+    "variant": null
+  },
+  {
+    "src": "bash -rcfile /dev/null -c x",
+    "variant": null
+  },
+  {
+    "src": "bash -init-file /dev/null -c x",
+    "variant": null
+  },
+  {
+    "src": "bash -restricted -c x",
+    "variant": null
+  },
+  {
+    "src": "bash -norc -c x",
+    "variant": null
+  },
+  {
+    "src": "bash -noprofile -c x",
+    "variant": null
+  },
+  {
+    "src": "bash -noediting -c x",
+    "variant": null
+  },
+  {
+    "src": "bash -posix -c x",
+    "variant": null
+  },
+  {
+    "src": "bash -login -c x",
+    "variant": null
+  },
+  {
+    "src": "bash -verbose -c x",
+    "variant": null
+  },
+  {
+    "src": "sh -rcfile /dev/null s",
+    "variant": null
+  },
+  {
+    "src": "sh -restricted s",
+    "variant": null
+  },
+  {
+    "src": "sh -init-file /dev/null -c x",
+    "variant": null
+  },
+  {
+    "src": "sh -noprofile -c x",
+    "variant": null
+  },
+  {
+    "src": "bash -o \"$@\" -c x",
+    "variant": null
+  },
+  {
+    "src": "bash +o \"$@\" -c x",
+    "variant": null
+  },
+  {
+    "src": "bash -eo \"$@\" -c x",
+    "variant": null
+  },
+  {
+    "src": "bash --rcfile \"$@\" -c x",
+    "variant": null
+  },
+  {
+    "src": "bash --init-file \"$@\" -c x",
+    "variant": null
+  },
+  {
+    "src": "bash -rcfile \"$@\" -c x",
+    "variant": null
+  },
+  {
+    "src": "bash -init-file \"$@\" -c x",
+    "variant": null
+  },
+  {
+    "src": "q -profile -c x",
+    "variant": null
+  },
+  {
+    "src": "q -restricted s",
+    "variant": null
+  },
+  {
+    "src": "bash -o \"$@\" -c 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "bash +o \"$@\" -c 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "bash --rcfile \"$@\" -c 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "bash -rcfile \"$@\" -c 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'zsh' '--emulate' 'sh' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'zsh' '+-emulate' 'zsh' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'zsh' '--no-rcs' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'zsh' '+-rcs' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'zsh' '-b' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'zsh' '+b' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'zsh' '-eb' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'zsh' '-bc' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'zsh' '-cb' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'zsh' '+bc' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'zsh' '-x-' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'zsh' '+x-' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'zsh' '+-' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'ksh' '-o' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'ksh' '+o' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'ksh' '-o' '+c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'ksh' '+o' '+c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'ksh' '-eo' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'ksh' '+eo' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'ksh' '-co' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'ksh' '-o' '--' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'ksh' '+o' '--' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'ksh' '-c' '+' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'bash' '+o' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'sh' '+o' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'dash' '+o' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "'zsh' '+o' '-c' 'printf \"COMMAND_STRING\\n\"'",
+    "variant": null
+  },
+  {
+    "src": "env A-B=1 rm x",
+    "variant": null
+  },
+  {
+    "src": "env 1X=2 rm x",
+    "variant": null
+  },
+  {
+    "src": "env 名=🎉 rm x",
+    "variant": null
+  },
+  {
+    "src": "env A=1 B-C=2 rm x",
+    "variant": null
+  },
+  {
+    "src": "env é=中 rm x",
+    "variant": null
+  },
+  {
+    "src": "env /tmp/name=value rm x",
+    "variant": null
+  },
+  {
+    "src": "sudo A-B=1 rm x",
+    "variant": null
+  },
+  {
+    "src": "sudo 1X=2 rm x",
+    "variant": null
+  },
+  {
+    "src": "sudo 名=🎉 rm x",
+    "variant": null
+  },
+  {
+    "src": "env rm x",
+    "variant": null
+  },
+  {
+    "src": "A=1 env B-C=2 rm x",
+    "variant": null
+  },
+  {
+    "src": "env =x rm",
+    "variant": null
+  },
+  {
+    "src": "env -- =x rm",
+    "variant": null
+  },
+  {
+    "src": "env A=1 =x rm",
+    "variant": null
+  },
+  {
+    "src": "sudo =x rm",
+    "variant": null
+  },
+  {
+    "src": "sudo /tmp/name=value rm",
+    "variant": null
+  },
+  {
+    "src": "sudo -- A-B=1 rm",
+    "variant": null
+  },
+  {
+    "src": "sudo -- A=1 rm",
+    "variant": null
+  },
+  {
+    "src": "env -- A-B=1 rm",
+    "variant": null
+  },
+  {
+    "src": "env -- -u=alice rm",
+    "variant": null
+  },
+  {
+    "src": "env A-B=1 -u alice rm",
+    "variant": null
+  },
+  {
+    "src": "env A-B=1 -- rm",
+    "variant": null
+  },
+  {
+    "src": "env A=1 --split-string=rm echo",
+    "variant": null
+  },
+  {
+    "src": "env A=1 -S rm",
+    "variant": null
+  },
+  {
+    "src": "sudo A-B=1 -u alice rm",
+    "variant": null
+  },
+  {
+    "src": "sudo -u alice A-B=1 rm",
+    "variant": null
+  },
+  {
+    "src": "env -S 'a b'",
+    "variant": null
+  },
+  {
+    "src": "env A-B=\"$x\" rm",
+    "variant": null
+  },
+  {
+    "src": "nice A-B=1 rm",
+    "variant": null
+  },
+  {
+    "src": "timeout 10 A-B=1 rm",
+    "variant": null
+  },
+  {
+    "src": "nohup A-B=1 rm",
+    "variant": null
+  },
+  {
+    "src": "command A-B=1 rm",
+    "variant": null
+  },
+  {
+    "src": "exec A-B=1 rm",
+    "variant": null
+  },
+  {
+    "src": "\"time\" A-B=1 rm",
+    "variant": null
+  },
+  {
+    "src": "retry A=1 rm",
+    "variant": null
+  },
+  {
+    "src": "retry A-B=1 rm",
+    "variant": null
+  },
+  {
+    "src": "retry -- A=1 rm",
+    "variant": null
+  },
+  {
+    "src": "retry -- 名=🎉 rm",
+    "variant": null
+  },
+  {
+    "src": "retry rm",
+    "variant": null
+  },
+  {
+    "src": "retry -n 3 curl x",
+    "variant": null
+  },
+  {
+    "src": "sudo -uuser rm x",
+    "variant": null
+  },
+  {
+    "src": "sudo -Eu user rm x",
+    "variant": null
+  },
+  {
+    "src": "env --split-string='a b'",
+    "variant": null
+  },
+  {
+    "src": "env env x",
+    "variant": null
+  },
+  {
+    "src": "retry retry x",
+    "variant": null
+  },
+  {
+    "src": "env A=🎉 中文 x",
+    "variant": null
+  },
+  {
+    "src": "sudo -u user -D /tmp rm",
+    "variant": null
+  },
+  {
+    "src": "env A=1 =value rm",
+    "variant": null
+  },
+  {
+    "src": "env -- =value rm",
+    "variant": null
+  },
+  {
+    "src": "with-context context cmd x",
+    "variant": null
+  },
+  {
+    "src": "sudo -- -u x",
+    "variant": null
+  },
+  {
+    "src": "env A=1",
+    "variant": null
+  },
+  {
+    "src": "command -v git",
+    "variant": null
+  },
+  {
+    "src": "\"$prog\" x",
+    "variant": null
+  },
+  {
+    "src": "retry git -C d fetch",
+    "variant": null
+  },
+  {
+    "src": "sudo -u user cmd x",
+    "variant": null
+  },
+  {
+    "src": "other task",
+    "variant": null
+  },
+  {
+    "src": "$command task",
+    "variant": null
+  },
+  {
+    "src": "x -unknown task",
+    "variant": null
+  },
+  {
+    "src": "env A=1 target",
+    "variant": null
+  },
+  {
+    "src": "x target",
+    "variant": null
+  },
+  {
+    "src": "run -q -u user target",
+    "variant": null
+  },
+  {
+    "src": "alias -q -u user target",
+    "variant": null
+  },
+  {
+    "src": "ksh +c 'printf COMMAND_STRING'",
+    "variant": null
+  },
+  {
+    "src": "ksh +ec 'printf COMMAND_STRING'",
+    "variant": null
+  },
+  {
+    "src": "ksh +o +c 'printf COMMAND_STRING'",
+    "variant": null
+  },
+  {
+    "src": "ksh93 +c 'printf COMMAND_STRING'",
+    "variant": null
+  },
+  {
+    "src": "ksh93 +ec 'printf COMMAND_STRING'",
+    "variant": null
+  },
+  {
+    "src": "ksh93 +o +c 'printf COMMAND_STRING'",
+    "variant": null
+  },
+  {
+    "src": "ksh -R -c script.sh",
+    "variant": null
+  },
+  {
+    "src": "echo x",
+    "variant": null
+  },
+  {
+    "src": "bash -e -rcfile 'printf COMMAND_STRING'",
+    "variant": null
+  },
+  {
+    "src": "sh -e -rcfile 'printf COMMAND_STRING'",
+    "variant": null
+  },
+  {
+    "src": "ksh -c +c 'printf COMMAND_STRING'",
+    "variant": null
+  },
+  {
+    "src": "ksh -c \"$opts\" 'printf COMMAND_STRING'",
+    "variant": null
+  },
+  {
+    "src": "mksh -o -c 'printf COMMAND_STRING'",
+    "variant": null
+  },
+  {
+    "src": "mksh -o +c 'printf COMMAND_STRING'",
+    "variant": null
+  },
+  {
+    "src": "bash + -c 'printf COMMAND_STRING'",
+    "variant": null
+  },
+  {
+    "src": "zsh -o shoptionletters -b -c 'printf COMMAND_STRING'",
+    "variant": null
+  },
+  {
+    "src": "sudo rm -- /safe",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\cA'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\cZ'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\ca'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\cz'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c0'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c1'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c9'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c!'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c\"'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c~'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c?'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c['",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c]'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c^'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c_'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c{'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c|'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c}'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c'",
+    "variant": null
+  },
+  {
+    "src": "echo \"${a[(r)$(printf foo)]}\"",
+    "variant": 16
+  },
+  {
+    "src": "echo '${a[(r)$(nested)]}' ordinary",
+    "variant": 16
+  },
+  {
+    "src": "printf %s $'\\c\\\\'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c\\\\tail'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\xFF'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'prefix\\c1tail'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c\\n'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c\\''",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c\\\"'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\377'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\400'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\777'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\x80'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\200'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\303\\251'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\xC3\\xA9'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\0'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\000'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\x00'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'prefix\\0suffix'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'prefix\\x00suffix'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c@'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\u0000'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\U00000000'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\x41'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\101'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\401'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\177'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\n\\t'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\u00E9'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c\\\\\\n'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\U0001F600'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c`'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c '",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'prefix\\c@tail'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c中'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\cß'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\c😀'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\uD800'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\uDBFF'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\uDC00'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\uDFFF'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\U0000D800'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\U0000DFFF'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\uD83D\\uDE00'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\uD7FF'",
+    "variant": null
+  },
+  {
+    "src": "printf %s $'\\uE000'",
+    "variant": null
+  },
+  {
+    "src": "echo \"🎉中é\"",
+    "variant": null
+  },
+  {
+    "src": "echo \"$HOME\"",
+    "variant": null
+  },
+  {
+    "src": "echo '🎉 你好 e\\u0301'\n",
+    "variant": null
+  }
+]
