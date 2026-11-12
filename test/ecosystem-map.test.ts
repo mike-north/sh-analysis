@@ -1,4 +1,4 @@
-/** The shared ecosystem map changes only as a new map version copied to every repository. */
+/** The shared ecosystem map changes only as the map itself describes: a new map version, copied byte for byte to every repository. */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";

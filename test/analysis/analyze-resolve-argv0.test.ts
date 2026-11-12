@@ -556,7 +556,7 @@ describe("resolveArgv0 — command -v/-V stop the chain at command itself (print
   });
 });
 
-describe("resolveArgv0 — wrappers named by absolute path are followed", () => {
+describe("resolveArgv0 — wrappers named by absolute path are followed (mike-north/sh-ast#66)", () => {
   // Criterion 1: an absolute path whose final segment is a wrapper name is
   // that wrapper. Expected chains are hand-derived from the source text.
   it("/usr/bin/env bash x -> follows env; the chain keeps the word as written (criterion 3)", () => {
