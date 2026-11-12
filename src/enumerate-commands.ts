@@ -225,55 +225,66 @@ function pushContext(
  * comment).
  */
 function scanForHiddenCommands(
-  value: unknown,
+  root: unknown,
   context: readonly CommandContext[],
   inventory: CommandInventory,
   depth: number,
 ): void {
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      scanForHiddenCommands(item, context, inventory, depth);
+  // Values still to inspect, with the next one to visit on top. Expression
+  // spines (`a + b + c + …`, `[[ x || y || … ]]`) nest one record per link, so
+  // the walk keeps its place on the heap: native stack use does not grow with
+  // the length of the spine. Children are pushed in reverse so they are
+  // visited in field order, which fixes the discovery order of uncertainties
+  // and of the commands reached through substitutions.
+  const pending: unknown[] = [root];
+  while (pending.length > 0) {
+    const value = pending.pop();
+    if (Array.isArray(value)) {
+      for (let index = value.length - 1; index >= 0; index--) {
+        pending.push(value[index]);
+      }
+      continue;
     }
-    return;
-  }
-  if (
-    typeof value !== "object" ||
-    value === null ||
-    value instanceof Uint8Array
-  ) {
-    return;
-  }
-  if (
-    isSyntaxNode(value) &&
-    value.Type === "FlagsArithm" &&
-    opaqueSubscript(value)
-  ) {
-    inventory.uncertainties.push({
-      reason: "opaque-zsh-subscript",
-      node: value,
-      context,
-    });
-  }
-  if (isSyntaxNode(value) && value.Type === "CmdSubst") {
-    visitStmtList(
-      nodeArray(value.Stmts),
-      pushContext(context, { kind: "cmdSubst" }),
-      inventory,
-      depth + 1,
-    );
-    return;
-  }
-  if (isSyntaxNode(value) && value.Type === "ProcSubst") {
-    visitStmtList(
-      nodeArray(value.Stmts),
-      pushContext(context, { kind: "procSubst" }),
-      inventory,
-      depth + 1,
-    );
-    return;
-  }
-  for (const field of Object.values(value)) {
-    scanForHiddenCommands(field, context, inventory, depth);
+    if (
+      typeof value !== "object" ||
+      value === null ||
+      value instanceof Uint8Array
+    ) {
+      continue;
+    }
+    if (
+      isSyntaxNode(value) &&
+      value.Type === "FlagsArithm" &&
+      opaqueSubscript(value)
+    ) {
+      inventory.uncertainties.push({
+        reason: "opaque-zsh-subscript",
+        node: value,
+        context,
+      });
+    }
+    if (isSyntaxNode(value) && value.Type === "CmdSubst") {
+      visitStmtList(
+        nodeArray(value.Stmts),
+        pushContext(context, { kind: "cmdSubst" }),
+        inventory,
+        depth + 1,
+      );
+      continue;
+    }
+    if (isSyntaxNode(value) && value.Type === "ProcSubst") {
+      visitStmtList(
+        nodeArray(value.Stmts),
+        pushContext(context, { kind: "procSubst" }),
+        inventory,
+        depth + 1,
+      );
+      continue;
+    }
+    const fields = Object.values(value);
+    for (let index = fields.length - 1; index >= 0; index--) {
+      pending.push(fields[index]);
+    }
   }
 }
 
@@ -454,39 +465,49 @@ function visitBinaryCmd(
   }
 }
 
-/** Conditions and alternatives retain distinct paths, including nested elif/else structure. */
+/**
+ * Conditions and alternatives retain distinct paths, including nested elif/else structure.
+ * A chained `elif` is followed in a loop, so a long chain does not deepen the native stack
+ * even when its clauses contain no statements to trip the depth guard.
+ */
 function visitIfClause(
   clause: IfClause,
   context: readonly CommandContext[],
   inventory: CommandInventory,
   depth: number,
 ): void {
-  visitStmtList(
-    nodeArray(clause.Cond),
-    pushContext(context, { kind: "if", branch: "cond" }),
-    inventory,
-    depth,
-  );
-  visitStmtList(
-    nodeArray(clause.Then),
-    pushContext(context, { kind: "if", branch: "then" }),
-    inventory,
-    depth,
-  );
-  const elseClause = clause.Else;
-  if (isSyntaxNode(elseClause)) {
+  let current = clause;
+  let currentContext = context;
+  let currentDepth = depth;
+  for (;;) {
+    visitStmtList(
+      nodeArray(current.Cond),
+      pushContext(currentContext, { kind: "if", branch: "cond" }),
+      inventory,
+      currentDepth,
+    );
+    visitStmtList(
+      nodeArray(current.Then),
+      pushContext(currentContext, { kind: "if", branch: "then" }),
+      inventory,
+      currentDepth,
+    );
+    const elseClause = current.Else;
+    if (!isSyntaxNode(elseClause)) {
+      return;
+    }
     // A chained `elif` — mvdan/sh models it as `IfClause.Else` pointing to
     // another `IfClause` — is one more genuine level of nesting than
     // `cond`/`then` above, so it gets its own `depth + 1` (a long `elif`
     // chain must still trip {@link MAX_STRUCTURAL_DEPTH}, since — unlike
     // `&&`/`||`/pipelines — this module does not special-case flattening
     // it).
-    visitIfClause(
-      elseClause,
-      pushContext(context, { kind: "if", branch: "else" }),
-      inventory,
-      depth + 1,
-    );
+    current = elseClause;
+    currentContext = pushContext(currentContext, {
+      kind: "if",
+      branch: "else",
+    });
+    currentDepth += 1;
   }
 }
 
