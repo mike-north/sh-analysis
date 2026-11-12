@@ -6,7 +6,7 @@ import test from "node:test";
 
 /** Pin the complete canonical file, including its final newline. */
 const acceptedSha256 =
-  "fa56cde52a39b762c76bcff9707f7a9cda5274fa5cdff6a953909418648ec144";
+  "b343beb73d6d82beed7147f37c8252f98bc9bcafd7c25ec6305f0f82db7f0ca8";
 
 /** Only complete LF-delimited marker lines bound the payload; prose containing a marker is not a fence. */
 function markerOffsets(source: Buffer, marker: Buffer): readonly number[] {
