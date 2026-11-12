@@ -1,10 +1,10 @@
-/** The shared ecosystem contract is immutable until the owner ratifies replacement bytes. */
+/** The shared ecosystem map changes only as a new map version copied to every repository. */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-/** Pin the owner-ratified complete file, including its final newline, without a private source dependency. */
+/** Pin the complete canonical file, including its final newline. */
 const acceptedSha256 =
   "fa56cde52a39b762c76bcff9707f7a9cda5274fa5cdff6a953909418648ec144";
 
@@ -25,7 +25,7 @@ function markerOffsets(source: Buffer, marker: Buffer): readonly number[] {
   return offsets;
 }
 
-void test("AGENTS contains exactly the ratified ecosystem map bytes inside one ordered fence", () => {
+void test("AGENTS contains exactly the canonical ecosystem map bytes inside one ordered fence", () => {
   const source = readFileSync(new URL("../AGENTS.md", import.meta.url));
   const begin = Buffer.from("<!-- ecosystem-map:begin -->");
   const end = Buffer.from("<!-- ecosystem-map:end -->");

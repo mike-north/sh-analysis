@@ -1,6 +1,6 @@
-# Guidance for contributors and coding agents
+# Guidance for contributors
 
-This file applies to anyone changing this repository, people and coding agents alike. Read
+This file applies to anyone changing this repository. Read
 [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow; the essentials are below.
 
 ## Responsibilities

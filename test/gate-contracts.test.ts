@@ -82,9 +82,9 @@ function commit(dir: string): void {
   git(
     dir,
     "-c",
-    "user.name=Mike North",
+    "user.name=Fixture Author",
     "-c",
-    "user.email=michael.l.north@gmail.com",
+    "user.email=fixture@example.com",
     "-c",
     "commit.gpgsign=false",
     "commit",
