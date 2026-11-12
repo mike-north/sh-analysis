@@ -1,4 +1,4 @@
-/** Owner policy is exercised against real manifests, Changesets plans, and CLI exits. */
+/** Release policy is exercised against real manifests, Changesets plans, and CLI exits. */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
@@ -19,7 +19,7 @@ import { fixtureChangesetConfig, object, workflow } from "./support.ts";
 
 const root = resolve(import.meta.dirname, "..");
 const policy =
-  /stays in the 0\.x series until the owner declares the shape stable.*no override flag/is;
+  /stays in the 0\.x series until the maintainer declares the shape stable.*no override flag/is;
 
 // Standalone package roots must not inherit the repository's workspace configuration.
 function fixture(
@@ -47,14 +47,14 @@ function fixture(
     ["init", "--initial-branch=main"],
     [
       "-c",
-      "user.name=Mike North",
+      "user.name=Fixture Author",
       "-c",
-      "user.email=michael.l.north@gmail.com",
+      "user.email=fixture@example.com",
       "-c",
       "commit.gpgsign=false",
       "commit",
       "--allow-empty",
-      "--author=Mike North <michael.l.north@gmail.com>",
+      "--author=Fixture Author <fixture@example.com>",
       "-m",
       "Establish release gate fixture",
     ],
@@ -89,7 +89,7 @@ function run(script: string, directory: string) {
   );
 }
 
-await test("G1 refuses major declarations, including nested files and unknown packages", (t) => {
+await test("The changeset check refuses major declarations, including nested files and unknown packages", (t) => {
   const directory = fixture(t, { bump: "major" });
   const result = run("check-changesets.ts", directory);
   assert.notEqual(result.status, 0);
@@ -108,7 +108,7 @@ await test("G1 refuses major declarations, including nested files and unknown pa
   assert.match(nested.stderr, policy);
 });
 
-await test("G2 refuses current public versions at or beyond 1.0, including prereleases", (t) => {
+await test("The version check refuses current public versions at or beyond 1.0, including prereleases", (t) => {
   for (const version of ["1.0.0", "2.0.0", "1.0.0-rc.1"]) {
     const result = run("check-versions.ts", fixture(t, { version }));
     assert.notEqual(result.status, 0);
@@ -116,7 +116,7 @@ await test("G2 refuses current public versions at or beyond 1.0, including prere
   }
 });
 
-await test("G2 discovers nested public manifests but permits private packages", (t) => {
+await test("The version check discovers nested public manifests but permits private packages", (t) => {
   const directory = fixture(t);
   mkdirSync(join(directory, "tools/nested"), { recursive: true });
   const manifest = join(directory, "tools/nested/package.json");
@@ -132,7 +132,7 @@ await test("G2 discovers nested public manifests but permits private packages", 
   assert.equal(allowed.status, 0, allowed.stderr);
 });
 
-await test("G2 rejects the real next Changesets version even when current manifests are 0.x", (t) => {
+await test("The version check rejects the real next Changesets version even when current manifests are 0.x", (t) => {
   const directory = fixture(t, { bump: "major" });
   // A documentation-like suffix must not hide a real changeset from planning.
   renameSync(

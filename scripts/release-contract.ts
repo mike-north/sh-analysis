@@ -1,11 +1,11 @@
-/** Owner-controlled stability policy and trusted-publisher identity are independent release requirements. */
+/** Stability policy and trusted-publisher identity are independent release requirements. */
 
 import { parse } from "semver";
 import { releaseRecord } from "./release-data.ts";
 
-/** Only the owner can declare stability; automation has no escape hatch from the 0.x ceiling. */
+/** Only the maintainer can declare stability; automation has no escape hatch from the 0.x ceiling. */
 export const stabilityPolicy =
-  "This project stays in the 0.x series until the owner declares the shape stable; there is no override flag.";
+  "This project stays in the 0.x series until the maintainer declares the shape stable; there is no override flag.";
 
 /** Reject unknown or nonzero major versions, including prereleases of a future stable major. */
 export function assertZeroVersion(
