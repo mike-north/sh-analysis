@@ -1,5 +1,11 @@
 # sh-analysis
 
+## 0.1.3
+
+### Patch Changes
+
+- [#13](https://github.com/mike-north/sh-analysis/pull/13) [`1f9768c`](https://github.com/mike-north/sh-analysis/commit/1f9768cd1830768cdeceb3e8ef14a64e7036bf1d) Thanks [@mike-north](https://github.com/mike-north)! - Analyse very long flat arithmetic expressions, test conditions and `elif` chains without exhausting the call stack. `enumerateCommands` previously threw a `RangeError` on an arithmetic expression, `[[ ... ]]` condition or subscript with several thousand terms; it now reports the commands and uncertainties inside it like any other, and the result and its order are unchanged.
+
 ## 0.1.2
 
 ### Patch Changes
