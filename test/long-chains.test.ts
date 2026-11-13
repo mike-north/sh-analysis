@@ -1,9 +1,10 @@
 /**
  * Flat command chains and flat arithmetic or test expressions of any length are analysed without
- * exhausting the native stack. Each tree stands in for source that the parser will accept once it
- * allows long flat chains (10,000 links), and is enumerated in a fresh process.
+ * exhausting the native stack. One case parses real 10,000-link source; the remaining constructed
+ * trees cover other syntax shapes and records that cannot be written as valid source. Each is
+ * enumerated in a fresh process.
  *
- * Expected outcomes follow from the shell meaning of the stand-in source: a command substitution
+ * Expected outcomes follow from the shell meaning of the source: a command substitution
  * inside an arithmetic expansion, subscript, slice or test runs, wherever it sits in the chain.
  *
  * @see https://www.gnu.org/software/bash/manual/bash.html#Shell-Arithmetic
