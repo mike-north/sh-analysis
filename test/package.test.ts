@@ -63,11 +63,11 @@ void test("installed package resolves only its declared public dependency and co
       JSON.parse(readFileSync(join(bindingDirectory, "package.json"), "utf8")),
     );
     const metadata = object(JSON.parse(readFileSync("package.json", "utf8")));
-    assert.equal(object(metadata.dependencies)["sh-ast"], "^0.11.0");
+    assert.equal(object(metadata.dependencies)["sh-ast"], "^0.12.0");
     assert.ok(typeof bindingMetadata.version === "string");
     assert.match(
       bindingMetadata.version,
-      /^0\.11\.\d+$/,
+      /^0\.12\.\d+$/,
       "Smoke binding must satisfy the actual supported release line",
     );
     writeFileSync(

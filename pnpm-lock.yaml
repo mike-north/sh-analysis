@@ -8,8 +8,8 @@ importers:
   .:
     dependencies:
       sh-ast:
-        specifier: ^0.11.0
-        version: 0.11.0
+        specifier: ^0.12.0
+        version: 0.12.0
     devDependencies:
       "@changesets/assemble-release-plan":
         specifier: 7.0.0
@@ -2804,11 +2804,12 @@ packages:
     engines: { node: ">=10" }
     hasBin: true
 
-  sh-ast@0.11.0:
+  sh-ast@0.12.0:
     resolution:
       {
-        integrity: sha512-WZ0wiOKmlEawKjAS9SD1/HS/Iwi1aV844FP+jGIhr7xOpKl/rV/OM2aPyrv06SFSLR6mVJw9Rhg2PYXeImCJ9g==,
+        integrity: sha512-ox9ZmXFAwoqirULczi8BNlBlcR0GvHerR0pJOZZvOo5ilhNE54I6LEhwhqnWlVkgK4Nt77wyb/GQHBrsIkZrlg==,
       }
+    engines: { node: ^22.14.0 || >=24 }
 
   shebang-command@2.0.0:
     resolution:
@@ -5005,7 +5006,7 @@ snapshots:
 
   semver@7.8.6: {}
 
-  sh-ast@0.11.0: {}
+  sh-ast@0.12.0: {}
 
   shebang-command@2.0.0:
     dependencies:
