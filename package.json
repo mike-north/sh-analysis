@@ -1,6 +1,6 @@
 {
   "name": "sh-analysis",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Facts about shell scripts from the sh-ast syntax tree: word resolution, every command site, wrapper chains (sudo, env, nice) and embedded interpreter programs, with explicit uncertainty.",
   "keywords": [
     "shell",
