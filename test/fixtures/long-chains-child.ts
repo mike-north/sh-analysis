@@ -2,11 +2,10 @@
  * Fresh-process driver for long flat chains: enumerates syntax trees whose spines are 10,000 links
  * long and prints one JSON outcome per named case, so the parent test can assert on each.
  *
- * sh-ast refuses chains of this length today, so every tree is assembled by hand from records the
- * parser produces for a two-link template, repeated along the left spine exactly as the parser nests
- * a flat chain (`a + b + c` is `BinaryArithm(BinaryArithm(a, b), c)`). Each case names the source
- * text it stands in for. Expected outcomes are written in the parent test from the meaning of that
- * source, never from this program's output.
+ * The parsed case exercises a real long flat chain. Other trees are assembled from two-link parser
+ * templates to cover several syntax shapes and records that cannot be expressed as valid source.
+ * Their left spines follow the parser's nesting (`a + b + c` is `BinaryArithm(BinaryArithm(a, b), c)`).
+ * Expected outcomes come from the meaning of the source, never from this program's output.
  */
 import { AndStmt, LangZsh, parseSync, Pipe } from "sh-ast";
 import type {
@@ -246,6 +245,10 @@ const cases: Record<string, () => Outcome> = {
   // echo $(( $(first) + 1 + ... + $(last) )): the command's own record contains the long chain
   "arithmetic expansion spine in a command argument": () =>
     run(wrapArithmetic("echo $(( 1 + 2 ))", arithSpine(FIRST, ONE, LAST))),
+
+  // The same argument built by parsing a real 10,000-link flat arithmetic expression.
+  "parsed arithmetic expansion in a command argument": () =>
+    run(parseSync(`echo $(( $(first)${" + 1".repeat(LINKS - 1)} + $(last) ))`)),
 
   // (( $(first) + 1 + ... + $(last) ))
   "arithmetic command spine": () => {
