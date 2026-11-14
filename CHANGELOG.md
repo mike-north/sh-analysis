@@ -1,5 +1,11 @@
 # sh-analysis
 
+## 0.2.0
+
+### Minor Changes
+
+- [#17](https://github.com/mike-north/sh-analysis/pull/17) [`9db9ade`](https://github.com/mike-north/sh-analysis/commit/9db9ade8b9522abd57a0fbcc6f9902872842baa6) Thanks [@mike-north](https://github.com/mike-north)! - Analyze long arithmetic chains inside command arguments using sh-ast 0.12.
+
 ## 0.1.3
 
 ### Patch Changes
