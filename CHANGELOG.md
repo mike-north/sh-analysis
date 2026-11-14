@@ -4,19 +4,19 @@
 
 ### Patch Changes
 
-- [#13](https://github.com/mike-north/sh-analysis/pull/13) [`1f9768c`](https://github.com/mike-north/sh-analysis/commit/1f9768cd1830768cdeceb3e8ef14a64e7036bf1d) Thanks [@mike-north](https://github.com/mike-north)! - Analyse very long flat arithmetic expressions, test conditions and `elif` chains without exhausting the call stack. `enumerateCommands` previously threw a `RangeError` on an arithmetic expression, `[[ ... ]]` condition or subscript with several thousand terms; it now reports the commands and uncertainties inside it like any other, and the result and its order are unchanged.
+- [#13](https://github.com/mike-north/sh-analysis/pull/13) [`6e9ed64`](https://github.com/mike-north/sh-analysis/commit/6e9ed64de3e6c88ae4b55d7f3cedf724c2bd4d23) Thanks [@mike-north](https://github.com/mike-north)! - Analyse very long flat arithmetic expressions, test conditions and `elif` chains without exhausting the call stack. `enumerateCommands` previously threw a `RangeError` on an arithmetic expression, `[[ ... ]]` condition or subscript with several thousand terms; it now reports the commands and uncertainties inside it like any other, and the result and its order are unchanged.
 
 ## 0.1.2
 
 ### Patch Changes
 
-- [#9](https://github.com/mike-north/sh-analysis/pull/9) [`978177d`](https://github.com/mike-north/sh-analysis/commit/978177d9ccb10969c047054358ce0bd2c6b5815e) Thanks [@mike-north](https://github.com/mike-north)! - Require Node.js 22.14 or later on the 22 line, or Node.js 24 or later.
+- [#9](https://github.com/mike-north/sh-analysis/pull/9) [`ba16862`](https://github.com/mike-north/sh-analysis/commit/ba1686241e6be35ddefd4da9d1538daadd91c13c) Thanks [@mike-north](https://github.com/mike-north)! - Require Node.js 22.14 or later on the 22 line, or Node.js 24 or later.
 
 ## 0.1.1
 
 ### Patch Changes
 
-- [#6](https://github.com/mike-north/sh-analysis/pull/6) [`6252252`](https://github.com/mike-north/sh-analysis/commit/62522526d631cb1872f8dbaeda4e34695bb98180) Thanks [@mike-north](https://github.com/mike-north)! - Rewrite the README for users: what the package does, how to install it, a quickstart with real output, one section per task, and the limits of what it can know. Add package keywords, homepage and issue tracker links.
+- [#6](https://github.com/mike-north/sh-analysis/pull/6) [`faefaed`](https://github.com/mike-north/sh-analysis/commit/faefaedf2ae875c5040dc6f14e199ddf7c040106) Thanks [@mike-north](https://github.com/mike-north)! - Rewrite the README for users: what the package does, how to install it, a quickstart with real output, one section per task, and the limits of what it can know. Add package keywords, homepage and issue tracker links.
 
 ## 0.1.0
 
