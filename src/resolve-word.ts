@@ -20,8 +20,9 @@ import { nodeArray } from "./node-helpers.js";
  *   depends on the environment or user database. See
  *   {@link ResolveWordOptions.context} for the applicable positions.
  * - `'glob'` — the word contains an unquoted, unescaped glob metacharacter
- *   (`*`/`?` or a possible Zsh pattern or glob qualifier starting with `(`),
- *   an unquoted bracket expression (`[...]` — an unquoted `[`
+ *   (`*`/`?`), a possible Zsh pattern group or glob qualifier starting with
+ *   an unquoted `(` in a command argument, an unquoted bracket expression
+ *   (`[...]` — an unquoted `[`
  *   with a later unquoted `]` in the same word, POSIX 2.13.1 / Bash
  *   Reference Manual §3.5.8.1, "Pattern Matching"), or an `ExtGlob` part
  *   (Bash Reference Manual §3.5.8, "Filename Expansion"): its value depends
@@ -93,7 +94,7 @@ export type WordResolution =
     };
 
 /**
- * Options controlling {@link resolveWord}'s tilde-expansion detection.
+ * Options controlling context-sensitive expansion detection in {@link resolveWord}.
  *
  * @public
  */
@@ -106,6 +107,7 @@ export interface ResolveWordOptions {
    *   assignment-shaped arguments such as `ARG=~/x` and `ARG=a:~/x` can
    *   expand an unquoted tilde after the assignment operator or a colon
    *   in the value. Ordinary arguments such as `a:~/x` keep that tilde literal.
+   *   An unquoted `(` can start a Zsh pattern group or glob qualifier here.
    * - `'assignment-value'` — the value side of a shell assignment (e.g.
    *   the `/foo:~/bar` in `PATH=/foo:~/bar`). Bash additionally expands an
    *   unquoted tilde immediately following an unquoted colon in the value.
@@ -229,10 +231,10 @@ function hasUnquotedBracketExpression(parts: readonly Node[]): boolean {
   return brackets.includes("]", openIndex + 1);
 }
 
-/** Applies quoting semantics to one fragment without evaluating dynamic content. */
+/** Interprets one fragment according to its word position and quoting. */
 function resolvePart(
   part: Node,
-  quoting: "unquoted" | "dblquoted",
+  position: "unquoted" | "command-argument" | "dblquoted",
 ): PartResult {
   switch (part.Type) {
     case "TypedNil":
@@ -242,10 +244,13 @@ function resolvePart(
       if (typeof raw !== "string") {
         return { ok: false, reason: "unsupported" };
       }
-      if (quoting === "dblquoted") {
+      if (position === "dblquoted") {
         return { ok: true, text: decodeDblQuotedLit(raw) };
       }
-      const { text, hasGlob } = decodeUnquotedLit(raw);
+      const { text, hasGlob } = decodeUnquotedLit(
+        raw,
+        position === "command-argument",
+      );
       if (hasGlob) {
         return { ok: false, reason: "glob" };
       }
@@ -390,8 +395,9 @@ export function resolveWord(
     return { static: false, reason: "glob" };
   }
   let text = "";
+  const position = context === "command-argument" ? context : "unquoted";
   for (const part of parts) {
-    const result = resolvePart(part, "unquoted");
+    const result = resolvePart(part, position);
     if (!result.ok) {
       return { static: false, reason: result.reason };
     }
@@ -424,7 +430,7 @@ export function singleFieldAssignmentPrefix(
     return undefined;
   }
   for (const part of parts) {
-    const result = resolvePart(part, "unquoted");
+    const result = resolvePart(part, "command-argument");
     if (
       !result.ok &&
       !(part.Type === "SglQuoted" && part.Dollar && result.reason === "locale")

@@ -570,6 +570,42 @@ describe("resolveWord — options.context: assignment-value colon-tilde expansio
   });
 });
 
+describe("resolveWord — literal parentheses outside command arguments", () => {
+  it("keeps literal parentheses in an expanding heredoc body", () => {
+    const file = parseSync("cat <<EOF\né(paren)\nEOF\n");
+    const hdoc = assertDefined(
+      file.Stmts?.[0]?.Redirs?.[0]?.Hdoc,
+      "missing heredoc body",
+    );
+    expect(resolveWord(hdoc)).toEqual({ static: true, text: "é(paren)\n" });
+  });
+
+  it("keeps literal parentheses in a Zsh heredoc delimiter", () => {
+    const file = parseSync("cat <<E(OF)\nplain\nE(OF)\n", {
+      Variant: LangZsh,
+    });
+    const delimiter = assertDefined(
+      file.Stmts?.[0]?.Redirs?.[0]?.Word,
+      "missing heredoc delimiter",
+    );
+    expect(resolveWord(delimiter)).toEqual({ static: true, text: "E(OF)" });
+  });
+
+  it("keeps literal parentheses in a parameter expansion default operand", () => {
+    const value = assignValueWord('A="${V:-é(paren)}"');
+    const quoted = value.Parts?.[0];
+    if (quoted?.Type !== "DblQuoted") throw new Error("missing quoted value");
+    const expansion = quoted.Parts?.[0];
+    if (expansion?.Type !== "ParamExp")
+      throw new Error("missing parameter expansion");
+    const operand = assertDefined(
+      expansion.Exp?.Word,
+      "missing default operand",
+    );
+    expect(resolveWord(operand)).toEqual({ static: true, text: "é(paren)" });
+  });
+});
+
 describe("resolveWord — criterion 3: multibyte fidelity", () => {
   it("resolves a word containing an emoji to the exact text", () => {
     expect(resolve("🎉")).toEqual({ static: true, text: "🎉" });
