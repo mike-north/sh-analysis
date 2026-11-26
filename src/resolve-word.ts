@@ -37,6 +37,7 @@ import { nodeArray } from "./node-helpers.js";
  *   the analyzer checks its `DblQuoted.Dollar` flag before visiting any
  *   children, so `$"hi $x"` reports `'locale'`.
  * - `'unsupported'` — the input cannot support an exact Unicode-text claim:
+ *   a literal contains a backslash whose meaning depends on missing context;
  *   an escape crosses caller-constructed word-part boundaries; a brace candidate
  *   has escape handling this analyzer cannot trust; a word contains nil/typed
  *   nil parts or byte-valued strings; or ANSI-C quoting produces NUL, non-ASCII
@@ -49,9 +50,9 @@ import { nodeArray } from "./node-helpers.js";
  * Whole-word `unsupported` preflight takes precedence even when a caller has
  * already supplied a `BraceExp`: an escape crossing parts can invalidate the
  * apparent quoting boundaries, and an escape-uncertain brace candidate remains
- * uncertain. Independently quoted or fully protected literal siblings do not
- * suppress a known `BraceExp`. After preflight, existing resolution order can
- * select a triggering tilde or earlier glob before visiting that part.
+ * uncertain. A known `BraceExp` remains observable alongside independently
+ * quoted literals and escapes with known quoting rules. After preflight, an
+ * earlier uncertainty can determine the result before visiting that part.
  *
  * This union may grow in a **minor** release — new mvdan/sh word-part node
  * types, or new statically-shaped-but-dynamic categories, can add new reason
@@ -91,7 +92,7 @@ export type WordResolution =
     };
 
 /**
- * Options controlling context-sensitive expansion detection in {@link resolveWord}.
+ * Options controlling expansion detection and escape decoding in {@link resolveWord}.
  *
  * @public
  */
@@ -110,8 +111,10 @@ export interface ResolveWordOptions {
    *   Zsh can also expand that tilde when the slash is quoted or escaped.
    *   This context accounts for both behaviors.
    *
-   * With the option omitted, either position can trigger a tilde result.
-   * This accounts for both possible uses of a bare `Word` node.
+   * Both positions also establish the escape rules for top-level `Lit` parts.
+   * With the option omitted, either position can trigger a tilde result, and
+   * a top-level literal with a backslash can report `'unsupported'` because
+   * the enclosing escape rules are unknown.
    *
    * @see https://www.gnu.org/software/bash/manual/bash.html#Tilde-Expansion
    * @see https://zsh.sourceforge.io/Doc/Release/Expansion.html#Filename-Expansion
@@ -124,8 +127,8 @@ export interface ResolveWordOptions {
    *
    * Set to `false` when the enclosing syntax suppresses filename
    * generation, as with heredoc bodies, heredoc delimiters, and words
-   * extracted from a double-quoted parameter expansion. A detached `Word` carries
-   * no enclosing syntax. Represented expansions still produce uncertainty.
+   * extracted from a double-quoted parameter expansion. Escape decoding is
+   * independent of this option. Represented expansions still produce uncertainty.
    */
   readonly filenameGeneration?: boolean;
 }
@@ -241,7 +244,7 @@ function hasUnquotedBracketExpression(parts: readonly Node[]): boolean {
 /** Interprets one fragment within its quoting and filename-generation context. */
 function resolvePart(
   part: Node,
-  quoting: "unquoted" | "dblquoted",
+  quoting: "unquoted" | "dblquoted" | "unknown",
   filenameGeneration = true,
 ): PartResult {
   switch (part.Type) {
@@ -258,6 +261,11 @@ function resolvePart(
       const { text, hasGlob } = decodeUnquotedLit(raw);
       if (filenameGeneration && hasGlob) {
         return { ok: false, reason: "glob" };
+      }
+      // A bare Lit can also come from a heredoc or quoted parameter operand,
+      // where a backslash can survive unquoting.
+      if (quoting === "unknown" && raw.includes("\\")) {
+        return { ok: false, reason: "unsupported" };
       }
       return { ok: true, text };
     }
@@ -322,8 +330,9 @@ function resolvePart(
  * Determines whether a `Word` node is statically a known string, and if
  * so, what that string is — the atom of shell-AST static analysis (e.g.
  * "is this word literally `rm`"). A word is static iff every part is a
- * literal after shell unquoting: a bare `Lit` (backslash escapes
- * processed), a `SglQuoted` (including `$'...'` ANSI-C escapes decoded),
+ * literal after shell unquoting: a bare `Lit` (backslash escapes decoded
+ * when the grammar position is known), a `SglQuoted` (including decoded
+ * `$'...'` ANSI-C escapes),
  * or a `DblQuoted` containing only literal parts (and not itself a
  * `$"..."` locale translation) — including concatenations of these (`'r'm`
  * resolves to `"rm"`). A word containing any expansion (`ParamExp`,
@@ -400,9 +409,10 @@ export function resolveWord(
   if (filenameGeneration && hasUnquotedBracketExpression(parts)) {
     return { static: false, reason: "glob" };
   }
+  const quoting = context === undefined ? "unknown" : "unquoted";
   let text = "";
   for (const part of parts) {
-    const result = resolvePart(part, "unquoted", filenameGeneration);
+    const result = resolvePart(part, quoting, filenameGeneration);
     if (!result.ok) {
       return { static: false, reason: result.reason };
     }

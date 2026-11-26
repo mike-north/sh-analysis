@@ -99,7 +99,8 @@ and `NAME=a:~/x` can expand tildes.
 A bare word is checked for possible filename generation, including Zsh pattern groups and glob
 qualifiers. Pass `{ filenameGeneration: false }` when the enclosing syntax suppresses filename
 generation, as with heredoc bodies, heredoc delimiters, and operands extracted from double-quoted
-parameter expansions.
+parameter expansions. Escape decoding is independent of this option. A detached literal with a
+backslash can return `unsupported` when the enclosing escape rules are unknown.
 
 ### List every command and how it is reached
 

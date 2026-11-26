@@ -64,7 +64,9 @@ function argWord(wordSrc: string, dialect: number = LangBash): Word {
 }
 
 function resolve(wordSrc: string, dialect?: number): WordResolution {
-  return resolveWord(argWord(wordSrc, dialect));
+  return resolveWord(argWord(wordSrc, dialect), {
+    context: "command-argument",
+  });
 }
 
 /**
@@ -560,13 +562,19 @@ describe("resolveWord — options.context: assignment-value colon-tilde expansio
   it("an escaped colon does not enable colon-adjacent tilde expansion", () => {
     // `a\:~b`: the backslash escapes the colon, so it is not the unquoted
     // `:` §3.5.2 requires immediately before the triggering `~`.
-    const word = argWord(sh`a\:~b`);
-    expect(resolveWord(word)).toEqual({ static: true, text: "a:~b" });
+    const word = assignValueWord(sh`A=a\:~b`);
+    expect(resolveWord(word, { context: "assignment-value" })).toEqual({
+      static: true,
+      text: "a:~b",
+    });
   });
 
   it("an escaped tilde after an unquoted colon does not trigger tilde expansion", () => {
-    const word = argWord(sh`a:\~b`);
-    expect(resolveWord(word)).toEqual({ static: true, text: "a:~b" });
+    const word = assignValueWord(sh`A=a:\~b`);
+    expect(resolveWord(word, { context: "assignment-value" })).toEqual({
+      static: true,
+      text: "a:~b",
+    });
   });
 });
 
@@ -677,6 +685,63 @@ describe("resolveWord — literal parentheses with filename generation suppresse
       static: true,
       text: "é-one.txt(N)",
     });
+  });
+});
+
+describe("resolveWord — escapes in detached words", () => {
+  it("reports escape uncertainty for a detached heredoc body with globbing disabled", () => {
+    const file = parseSync("cat <<EOF\né\\q*(paren)\nEOF\n");
+    const body = assertDefined(
+      file.Stmts?.[0]?.Redirs?.[0]?.Hdoc,
+      "missing heredoc body",
+    );
+    // An expanding heredoc preserves the backslash in `\q`.
+    expect(resolveWord(body)).toEqual({ static: false, reason: "glob" });
+    expect(resolveWord(body, { filenameGeneration: false })).toEqual({
+      static: false,
+      reason: "unsupported",
+    });
+  });
+
+  it("reports escape uncertainty for a detached double-quoted parameter default", () => {
+    const value = assignValueWord('A="${V:-é\\q*(paren)}"');
+    const quoted = value.Parts?.[0];
+    if (quoted?.Type !== "DblQuoted") throw new Error("missing quoted value");
+    const expansion = quoted.Parts?.[0];
+    if (expansion?.Type !== "ParamExp")
+      throw new Error("missing parameter expansion");
+    const operand = assertDefined(
+      expansion.Exp?.Word,
+      "missing default operand",
+    );
+    // The double-quoted default preserves the backslash in `\q`.
+    expect(resolveWord(operand, { filenameGeneration: false })).toEqual({
+      static: false,
+      reason: "unsupported",
+    });
+  });
+
+  it("reports escape uncertainty for a detached heredoc body without glob metacharacters", () => {
+    const file = parseSync("cat <<EOF\né\\q\nEOF\n");
+    const body = assertDefined(
+      file.Stmts?.[0]?.Redirs?.[0]?.Hdoc,
+      "missing heredoc body",
+    );
+    const uncertain = { static: false, reason: "unsupported" };
+    expect(resolveWord(body)).toEqual(uncertain);
+    expect(resolveWord(body, { filenameGeneration: false })).toEqual(uncertain);
+  });
+
+  it("decodes escapes in a known command argument independently of filename generation", () => {
+    const word = argWord(sh`é\q`);
+    const exact = { static: true, text: "éq" };
+    expect(resolveWord(word, { context: "command-argument" })).toEqual(exact);
+    expect(
+      resolveWord(word, {
+        context: "command-argument",
+        filenameGeneration: false,
+      }),
+    ).toEqual(exact);
   });
 });
 

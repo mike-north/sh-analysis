@@ -6,7 +6,7 @@
 
 Whether to check literal text for filename generation. Defaults to `true`<!-- -->, which covers possible Zsh pattern groups and glob qualifiers even when the word's position is unknown.
 
-Set to `false` when the enclosing syntax suppresses filename generation, as with heredoc bodies, heredoc delimiters, and words extracted from a double-quoted parameter expansion. A detached `Word` carries no enclosing syntax. Represented expansions still produce uncertainty.
+Set to `false` when the enclosing syntax suppresses filename generation, as with heredoc bodies, heredoc delimiters, and words extracted from a double-quoted parameter expansion. Escape decoding is independent of this option. Represented expansions still produce uncertainty.
 
 **Signature:**
 
