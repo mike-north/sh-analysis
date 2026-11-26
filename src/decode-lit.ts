@@ -21,8 +21,9 @@
 
 /**
  * Unquoted glob metacharacters this module detects directly, by a single
- * unescaped occurrence: `*` (any string) and `?` (any single character) —
- * Bash Reference Manual §3.5.8.1, "Pattern Matching". Bracket expressions
+ * unescaped occurrence: `*` (any string), `?` (any single character), and
+ * `(` (a possible Zsh pattern group or glob qualifier). The parser can
+ * represent Zsh parentheses within a literal word part. Bracket expressions
  * (`[...]`) are handled separately by {@link decodeUnquotedLit}'s
  * `brackets` output, since — per POSIX 2.13.1 and Bash §3.5.8.1 — a lone
  * unquoted `[` is only glob-significant when a later unquoted `]` closes
@@ -31,7 +32,7 @@
  * different, concatenated `Lit` part of the same `Word` (see
  * `resolveWord`'s cross-part bracket scan).
  */
-const GLOB_METACHARACTERS: ReadonlySet<string> = new Set(["*", "?"]);
+const GLOB_METACHARACTERS: ReadonlySet<string> = new Set(["*", "?", "("]);
 
 /** The two characters {@link decodeUnquotedLit} tracks for cross-part bracket-expression detection. */
 const BRACKET_CHARACTERS: ReadonlySet<string> = new Set(["[", "]"]);
@@ -45,7 +46,7 @@ const BRACKET_CHARACTERS: ReadonlySet<string> = new Set(["[", "]"]);
 export interface UnquotedLitResult {
   /** The decoded literal text (escapes resolved, glob chars included verbatim). */
   readonly text: string;
-  /** `true` iff an unescaped `*` or `?` appears in `raw`. */
+  /** `true` iff an unescaped `*`, `?`, or `(` appears in `raw`. */
   readonly hasGlob: boolean;
   /**
    * Every unescaped `[` or `]` in `raw`, concatenated in source order (e.g.

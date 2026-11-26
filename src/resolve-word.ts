@@ -14,14 +14,14 @@ import { nodeArray } from "./node-helpers.js";
  *   `ArithmExp` (`$((expr))`), or a `ProcSubst` (`<(cmd)`/`>(cmd)`) part:
  *   its value depends on program state (variables, command output, process
  *   substitution) that only exists at run time.
- * - `'tilde'` — an unquoted, unescaped `~` can trigger Bash tilde expansion
- *   (Bash Reference Manual §3.5.2, "Tilde Expansion"). This includes a
- *   word-initial tilde, plus eligible tildes after `:` in assignment values
+ * - `'tilde'` — an unquoted, unescaped `~` can trigger tilde expansion.
+ *   This includes a word-initial tilde, plus eligible tildes after `:` in assignment values
  *   or after `=` or `:` in assignment-shaped command arguments. The result
  *   depends on the environment or user database. See
  *   {@link ResolveWordOptions.context} for the applicable positions.
  * - `'glob'` — the word contains an unquoted, unescaped glob metacharacter
- *   (`*`/`?`), an unquoted bracket expression (`[...]` — an unquoted `[`
+ *   (`*`/`?` or a possible Zsh pattern or glob qualifier starting with `(`),
+ *   an unquoted bracket expression (`[...]` — an unquoted `[`
  *   with a later unquoted `]` in the same word, POSIX 2.13.1 / Bash
  *   Reference Manual §3.5.8.1, "Pattern Matching"), or an `ExtGlob` part
  *   (Bash Reference Manual §3.5.8, "Filename Expansion"): its value depends
@@ -99,7 +99,7 @@ export type WordResolution =
  */
 export interface ResolveWordOptions {
   /**
-   * Which Bash grammar position `word` occupies. Both positions allow
+   * Which grammar position `word` occupies. Both positions allow
    * tilde expansion at the start of the word.
    *
    * - `'command-argument'` — a simple-command word. In normal Bash mode,
@@ -109,11 +109,14 @@ export interface ResolveWordOptions {
    * - `'assignment-value'` — the value side of a shell assignment (e.g.
    *   the `/foo:~/bar` in `PATH=/foo:~/bar`). Bash additionally expands an
    *   unquoted tilde immediately following an unquoted colon in the value.
+   *   Zsh can also expand that tilde when the slash is quoted or escaped.
+   *   This context accounts for both behaviors.
    *
    * With the option omitted, either position can trigger a tilde result.
    * This accounts for both possible uses of a bare `Word` node.
    *
    * @see https://www.gnu.org/software/bash/manual/bash.html#Tilde-Expansion
+   * @see https://zsh.sourceforge.io/Doc/Release/Expansion.html#Filename-Expansion
    */
   readonly context?: "command-argument" | "assignment-value";
 }
@@ -136,12 +139,15 @@ type PartResult = PartOk | PartFail;
  * A nonzero offset skips a command operand's assignment prefix in the
  * first literal and permits a tilde immediately after the equals.
  *
- * A candidate prefix must remain unquoted through the end of the word or
- * until an unquoted slash or colon. Adjacent literal parts share this state.
+ * For Bash command arguments, a candidate prefix must remain unquoted
+ * through the end of the word or until an unquoted slash or colon. Assignment
+ * values also allow Zsh's treatment of quoted delimiters. Adjacent literal
+ * parts share the prefix state.
  */
 function hasAssignmentValueTilde(
   parts: readonly Node[],
   firstPartOffset: number,
+  requireUnquotedPrefix: boolean,
 ): boolean {
   let followsDelimiter = firstPartOffset > 0;
   let inTildePrefix = false;
@@ -170,6 +176,7 @@ function hasAssignmentValueTilde(
         return true;
       }
       if (followsDelimiter && ch === "~") {
+        if (!requireUnquotedPrefix) return true;
         inTildePrefix = true;
       }
       followsDelimiter = ch === ":";
@@ -371,7 +378,11 @@ export function resolveWord(
     context === "assignment-value" ? undefined : scalarAssignmentPrefix(first);
   if (
     (assignmentPrefix !== undefined || context !== "command-argument") &&
-    hasAssignmentValueTilde(parts, assignmentPrefix?.length ?? 0)
+    hasAssignmentValueTilde(
+      parts,
+      assignmentPrefix?.length ?? 0,
+      context === "command-argument",
+    )
   ) {
     return { static: false, reason: "tilde" };
   }
@@ -394,7 +405,8 @@ export function resolveWord(
  * field. Bash treats tilde replacement as quoted, and ANSI-C quotes preserve
  * field boundaries even when a Unicode escape's encoding depends on locale.
  * Other parts must resolve as literals, with brace and pathname expansion
- * ruled out for the full word.
+ * ruled out for the full word. Zsh glob qualifiers can remove the prefix
+ * or the entire operand.
  *
  * @internal
  */

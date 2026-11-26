@@ -45,9 +45,9 @@ Description
 
 </td><td>
 
-_(Optional)_ Which Bash grammar position `word` occupies. Both positions allow tilde expansion at the start of the word.
+_(Optional)_ Which grammar position `word` occupies. Both positions allow tilde expansion at the start of the word.
 
-- `'command-argument'` — a simple-command word. In normal Bash mode, assignment-shaped arguments such as `ARG=~/x` and `ARG=a:~/x` can expand an unquoted tilde after the assignment operator or a colon in the value. Ordinary arguments such as `a:~/x` keep that tilde literal. - `'assignment-value'` — the value side of a shell assignment (e.g. the `/foo:~/bar` in `PATH=/foo:~/bar`<!-- -->). Bash additionally expands an unquoted tilde immediately following an unquoted colon in the value.
+- `'command-argument'` — a simple-command word. In normal Bash mode, assignment-shaped arguments such as `ARG=~/x` and `ARG=a:~/x` can expand an unquoted tilde after the assignment operator or a colon in the value. Ordinary arguments such as `a:~/x` keep that tilde literal. - `'assignment-value'` — the value side of a shell assignment (e.g. the `/foo:~/bar` in `PATH=/foo:~/bar`<!-- -->). Bash additionally expands an unquoted tilde immediately following an unquoted colon in the value. Zsh can also expand that tilde when the slash is quoted or escaped. This context accounts for both behaviors.
 
 With the option omitted, either position can trigger a tilde result. This accounts for both possible uses of a bare `Word` node.
 

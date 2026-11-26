@@ -23,7 +23,7 @@ import { resolveWord } from "../../src/index.js";
 import type { WordResolution } from "../../src/index.js";
 import { parseSync } from "sh-ast";
 import type { Word, WordPart } from "sh-ast";
-import { LangBash } from "sh-ast";
+import { LangBash, LangZsh } from "sh-ast";
 import { syntheticNode } from "./analyze-fixtures.js";
 
 const sh = String.raw;
@@ -494,6 +494,19 @@ describe("resolveWord — options.context: assignment-value colon-tilde expansio
       reason: "tilde",
     });
   });
+
+  it.each(['A=é:~"/x"', sh`A=é:~\/x`])(
+    "keeps a Zsh assignment value with a quoted or escaped tilde delimiter uncertain (%s)",
+    (source) => {
+      // Zsh 5.9 produces é:/first/x or é:/second/x as HOME changes.
+      const word = assignValueWord(source, LangZsh);
+      const expected = { static: false, reason: "tilde" };
+      expect(resolveWord(word, { context: "assignment-value" })).toEqual(
+        expected,
+      );
+      expect(resolveWord(word)).toEqual(expected);
+    },
+  );
 
   it("an assignment value with no colon-adjacent tilde stays static regardless of context", () => {
     const word = assignValueWord("PATH=/foo/bar");
