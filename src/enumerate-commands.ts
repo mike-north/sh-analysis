@@ -5,7 +5,6 @@ import { ShAnalyzeMaxDepthError } from "./errors.js";
 import type {
   BinaryCmd,
   CallExpr,
-  CaseItem,
   GoString,
   FlagsArithm,
   IfClause,
@@ -501,22 +500,6 @@ function visitIfClause(
   }
 }
 
-/** A case arm adds a case frame to its statements and preserves the enclosing context for its patterns. */
-function visitCaseItem(
-  item: CaseItem,
-  context: readonly CommandContext[],
-  inventory: CommandInventory,
-  depth: number,
-): void {
-  scanForHiddenCommands(item.Patterns, context, inventory, depth);
-  visitStmtList(
-    nodeArray(item.Stmts),
-    pushContext(context, { kind: "case" }),
-    inventory,
-    depth + 1,
-  );
-}
-
 /** Command structures define context; expression-shaped children expose only represented substitutions. */
 function visitCommand(
   cmd: Node,
@@ -561,16 +544,23 @@ function visitCommand(
     case "IfClause":
       visitIfClause(cmd, context, inventory, depth + 1);
       return;
-    case "CaseClause": {
-      scanForHiddenCommands(cmd.Word, context, inventory, depth);
-      for (const item of nodeArray(cmd.Items)) {
-        visitCaseItem(item, context, inventory, depth);
+    case "CaseClause":
+    case "CaseItem": {
+      if (cmd.Type === "CaseClause") {
+        scanForHiddenCommands(cmd.Word, context, inventory, depth);
+      }
+      const items = cmd.Type === "CaseClause" ? nodeArray(cmd.Items) : [cmd];
+      for (const item of items) {
+        scanForHiddenCommands(item.Patterns, context, inventory, depth);
+        visitStmtList(
+          nodeArray(item.Stmts),
+          pushContext(context, { kind: "case" }),
+          inventory,
+          depth + 1,
+        );
       }
       return;
     }
-    case "CaseItem":
-      visitCaseItem(cmd, context, inventory, depth);
-      return;
     case "ForClause": {
       scanForHiddenCommands(cmd.Loop, context, inventory, depth);
       visitStmtList(

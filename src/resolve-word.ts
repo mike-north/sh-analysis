@@ -136,23 +136,20 @@ type PartResult = PartOk | PartFail;
  * A nonzero offset skips a command operand's assignment prefix in the
  * first literal and permits a tilde immediately after the equals.
  *
- * Only a `Word`'s top-level `Lit` parts carry unquoted text; any other
- * part type (`SglQuoted`, `DblQuoted`, `ParamExp`, …) breaks adjacency —
- * whatever text or expansion it represents sits between the `:` and any
- * following `~`, so they are no longer *immediately* adjacent. `:`/`~`
- * adjacency is tracked across concatenated `Lit` parts (state carried
- * between loop iterations), since concatenation joins parts with no
- * grammar-level separator between them.
+ * A candidate prefix must remain unquoted through the end of the word or
+ * until an unquoted slash or colon. Adjacent literal parts share this state.
  */
 function hasAssignmentValueTilde(
   parts: readonly Node[],
   firstPartOffset: number,
 ): boolean {
   let followsDelimiter = firstPartOffset > 0;
+  let inTildePrefix = false;
   let i = firstPartOffset;
   for (const part of parts) {
     if (part.Type !== "Lit") {
       followsDelimiter = false;
+      inTildePrefix = false;
       continue;
     }
     const raw = part.Value;
@@ -165,18 +162,30 @@ function hasAssignmentValueTilde(
         // An escaped character (whatever it is) is never an unescaped `:`
         // or `~`, and breaks adjacency for the purposes of this scan.
         followsDelimiter = false;
+        inTildePrefix = false;
         i += 2;
         continue;
       }
-      if (followsDelimiter && ch === "~") {
+      if (inTildePrefix && (ch === "/" || ch === ":")) {
         return true;
+      }
+      if (followsDelimiter && ch === "~") {
+        inTildePrefix = true;
       }
       followsDelimiter = ch === ":";
       i += 1;
     }
     i = 0;
   }
-  return false;
+  return inTildePrefix;
+}
+
+/** Identifies the scalar assignment prefix represented in the leading literal. */
+function scalarAssignmentPrefix(first: Node | undefined): string | undefined {
+  if (first?.Type === "Lit" && typeof first.Value === "string") {
+    return /^[a-zA-Z_][a-zA-Z_0-9]*\+?=/.exec(first.Value)?.[0];
+  }
+  return undefined;
 }
 
 /**
@@ -358,17 +367,11 @@ export function resolveWord(
     return { static: false, reason: "tilde" };
   }
   const context = options?.context;
-  // A scalar assignment prefix is part of the initial unquoted literal of
-  // a command argument. Quoted or escaped names and operators cannot match.
   const assignmentPrefix =
-    context !== "assignment-value" &&
-    first.Type === "Lit" &&
-    typeof first.Value === "string"
-      ? /^[a-zA-Z_][a-zA-Z_0-9]*\+?=/.exec(first.Value)
-      : null;
+    context === "assignment-value" ? undefined : scalarAssignmentPrefix(first);
   if (
-    (assignmentPrefix !== null || context !== "command-argument") &&
-    hasAssignmentValueTilde(parts, assignmentPrefix?.[0].length ?? 0)
+    (assignmentPrefix !== undefined || context !== "command-argument") &&
+    hasAssignmentValueTilde(parts, assignmentPrefix?.length ?? 0)
   ) {
     return { static: false, reason: "tilde" };
   }
@@ -384,4 +387,38 @@ export function resolveWord(
     text += result.text;
   }
   return { static: true, text };
+}
+
+/**
+ * Returns a fixed scalar assignment prefix when the operand is one shell
+ * field. Bash treats tilde replacement as quoted, and ANSI-C quotes preserve
+ * field boundaries even when a Unicode escape's encoding depends on locale.
+ * Other parts must resolve as literals, with brace and pathname expansion
+ * ruled out for the full word.
+ *
+ * @internal
+ */
+export function singleFieldAssignmentPrefix(
+  word: Node | null | undefined,
+): string | undefined {
+  if (word?.Type !== "Word" || word.Parts?.includes(null)) return undefined;
+  const parts = nodeArray(word.Parts);
+  const prefix = scalarAssignmentPrefix(parts[0]);
+  if (
+    prefix === undefined ||
+    observeBraces(word) !== false ||
+    hasUnquotedBracketExpression(parts)
+  ) {
+    return undefined;
+  }
+  for (const part of parts) {
+    const result = resolvePart(part, "unquoted");
+    if (
+      !result.ok &&
+      !(part.Type === "SglQuoted" && part.Dollar && result.reason === "locale")
+    ) {
+      return undefined;
+    }
+  }
+  return prefix;
 }

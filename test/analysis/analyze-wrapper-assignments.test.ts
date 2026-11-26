@@ -100,6 +100,32 @@ describe("utility assignment operands", () => {
     });
   });
 
+  it.each(["A=~/x", "A=$'\\u00e9'", 'A=~"/x"'])(
+    "finds the wrapped interpreter after the single assignment operand %s",
+    (operand) => {
+      const result = resolve(`env ${operand} bash -c 'printf hi'`);
+      expect(result.chainIndices).toEqual([0, 2, 3]);
+      expect(result.effective).toEqual({
+        static: false,
+        reason: "embedded-command",
+      });
+    },
+  );
+
+  it.each([
+    ["A=~/x$fields", "tilde"],
+    ["A=$'\\u00e9'$fields", "locale"],
+    ["A=~/x*", "tilde"],
+    ["A=$'\\u00e9'[ab]", "glob"],
+  ])(
+    "stops at an assignment-shaped word that can produce multiple fields (%s)",
+    (operand, reason) => {
+      const result = resolve(`env ${operand} bash -c 'printf hi'`);
+      expect(result.chainIndices).toEqual([0, 1]);
+      expect(result.effective).toEqual({ static: false, reason });
+    },
+  );
+
   it.each([
     "nice A-B=1 rm",
     "timeout 10 A-B=1 rm",

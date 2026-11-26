@@ -4,7 +4,7 @@
 
 ## WrapperSpec.assignmentOperands property
 
-Assignment-operand scanning grammar, independent of the wrapper's name. Each preset defines both which static words are assignments and where option scanning stops; it does not model the utility's other options.
+Assignment-operand scanning grammar, independent of the wrapper's name. Each preset defines both which words are assignments and where option scanning stops; it does not model the utility's other options.
 
 - `'shell-identifier'`<!-- -->: the ASCII `NAME=value` rule before `--`<!-- -->; options may resume after an assignment. - `'env'`<!-- -->: after options, consume words containing `=` (including after `--`<!-- -->). The first assignment ends option scanning permanently. Empty names (`=value`<!-- -->) produce `'ambiguous-assignment'` because GNU/glibc and BSD differ on whether they can be installed in the environment. - `'sudo'`<!-- -->: before `--`<!-- -->, consume words containing `=` unless they start with `/` or `=`<!-- -->; option scanning may resume after each assignment.
 

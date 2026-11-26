@@ -22,6 +22,7 @@
  * @see https://pkg.go.dev/mvdan.cc/sh/v3@v3.13.1/syntax — mvdan/sh's AST reference (ground truth for node shapes)
  * @see https://www.gnu.org/software/bash/manual/bash.html#Tilde-Expansion — §3.5.2, colon-tilde vs. command-argument tilde expansion (argv-context regression below)
  */
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -258,6 +259,38 @@ describe("enumerateCommands — criterion 1: compound coverage (one context kind
       ["printf a", [{ kind: "case" }]],
       ["printf b", [{ kind: "case" }]],
     ]);
+  });
+
+  it("enumerates 500 nested case arms on a smaller native stack", () => {
+    const program = `
+      import { enumerateCommands, ShAnalyzeMaxDepthError } from "sh-analysis";
+      import { parseSync } from "sh-ast";
+      const wrap = (cmd) => ({
+        Type: "CaseClause", Word: null, Items: [
+          { Type: "CaseItem", Patterns: null, Stmts: [{ Type: "Stmt", Cmd: cmd, Redirs: null }] },
+        ],
+      });
+      let cmd = parseSync("true").Stmts[0].Cmd;
+      for (let depth = 0; depth < 500; depth++) cmd = wrap(cmd);
+      const { commands } = enumerateCommands(cmd);
+      if (commands.length !== 1 || commands[0].context.length !== 500 ||
+          commands[0].context.some((frame) => frame.kind !== "case")) {
+        throw new Error("expected one command nested in 500 case arms");
+      }
+      try {
+        enumerateCommands(wrap(cmd));
+        throw new Error("expected the structural depth limit");
+      } catch (error) {
+        if (!(error instanceof ShAnalyzeMaxDepthError)) throw error;
+      }
+    `;
+    const run = spawnSync(
+      process.execPath,
+      ["--stack-size=400", "--input-type=module", "-e", program],
+      { encoding: "utf8" },
+    );
+    expect(run.error).toBeUndefined();
+    expect(run.status, run.stderr).toBe(0);
   });
 
   it("'loop': a `for` loop tags only the body (role: 'body'); a `while` loop tags both cond and body", () => {
@@ -562,7 +595,14 @@ describe("enumerateCommands — argv resolved with command-argument semantics (r
     expect(site.argv[1]).toEqual({ static: true, text: "a:~/b" });
   });
 
-  it.each(["ARG=~/x", "ARG=prefix:~/x", 'ARG="prefix":~/x', "ARG+=~/x"])(
+  it.each([
+    "ARG=~/x",
+    "ARG=prefix:~/x",
+    'ARG="prefix":~/x',
+    "ARG+=~/x",
+    'A=~/"x"',
+    "A=one:two:~/x",
+  ])(
     "reports tilde expansion in the assignment-shaped operand %s",
     (operand) => {
       const [site] = enumerate("printf " + operand);
@@ -578,6 +618,9 @@ describe("enumerateCommands — argv resolved with command-argument semantics (r
     [String.raw`ARG=prefix\:~/x`, "ARG=prefix:~/x"],
     ["ARG=prefix=~/x", "ARG=prefix=~/x"],
     ["1ARG=~/x", "1ARG=~/x"],
+    ['A=~"/x"', "A=~/x"],
+    ['A=prefix:~"/x"', "A=prefix:~/x"],
+    ["A=~\\/x", "A=~/x"],
   ])("keeps the inactive tilde in %s literal", (operand, text) => {
     const [site] = enumerate("printf " + operand);
     expect(site.argv[1]).toEqual({ static: true, text });
