@@ -96,6 +96,11 @@ Quotes and escapes are removed for you. When calling `resolveWord(word)` directl
 for a simple-command word. In normal Bash mode, assignment-shaped arguments such as `NAME=~/x`
 and `NAME=a:~/x` can expand tildes.
 
+A bare word is checked for possible filename generation, including Zsh pattern groups and glob
+qualifiers. Pass `{ filenameGeneration: false }` when the enclosing syntax suppresses filename
+generation, as with heredoc bodies, heredoc delimiters, and operands extracted from double-quoted
+parameter expansions.
+
 ### List every command and how it is reached
 
 `enumerateCommands` walks the whole tree, including command substitutions, process substitutions,

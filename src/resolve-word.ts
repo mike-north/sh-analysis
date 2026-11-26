@@ -19,14 +19,11 @@ import { nodeArray } from "./node-helpers.js";
  *   or after `=` or `:` in assignment-shaped command arguments. The result
  *   depends on the environment or user database. See
  *   {@link ResolveWordOptions.context} for the applicable positions.
- * - `'glob'` — the word contains an unquoted, unescaped glob metacharacter
- *   (`*`/`?`), a possible Zsh pattern group or glob qualifier starting with
- *   an unquoted `(` in a command argument, an unquoted bracket expression
- *   (`[...]` — an unquoted `[`
- *   with a later unquoted `]` in the same word, POSIX 2.13.1 / Bash
- *   Reference Manual §3.5.8.1, "Pattern Matching"), or an `ExtGlob` part
- *   (Bash Reference Manual §3.5.8, "Filename Expansion"): its value depends
- *   on which filesystem entries exist at run time.
+ * - `'glob'` — an `ExtGlob` part or possible filename generation from
+ *   unquoted literal text. The literal check recognizes unescaped `*`,
+ *   `?`, and `(` for Zsh pattern groups or qualifiers. It also recognizes
+ *   a bracket expression when an unquoted `[` has a later unquoted `]`
+ *   in the same word. The result depends on the filesystem at run time.
  * - `'brace'` — the word contains a `BraceExp` part or the pinned upstream
  *   `syntax.SplitBraces` produces one on a private observation copy (Bash
  *   Reference Manual §3.5.1, "Brace Expansion"). Parser output is unchanged.
@@ -107,7 +104,6 @@ export interface ResolveWordOptions {
    *   assignment-shaped arguments such as `ARG=~/x` and `ARG=a:~/x` can
    *   expand an unquoted tilde after the assignment operator or a colon
    *   in the value. Ordinary arguments such as `a:~/x` keep that tilde literal.
-   *   An unquoted `(` can start a Zsh pattern group or glob qualifier here.
    * - `'assignment-value'` — the value side of a shell assignment (e.g.
    *   the `/foo:~/bar` in `PATH=/foo:~/bar`). Bash additionally expands an
    *   unquoted tilde immediately following an unquoted colon in the value.
@@ -121,6 +117,17 @@ export interface ResolveWordOptions {
    * @see https://zsh.sourceforge.io/Doc/Release/Expansion.html#Filename-Expansion
    */
   readonly context?: "command-argument" | "assignment-value";
+  /**
+   * Whether to check literal text for filename generation. Defaults to
+   * `true`, which covers possible Zsh pattern groups and glob qualifiers
+   * even when the word's position is unknown.
+   *
+   * Set to `false` when the enclosing syntax suppresses filename
+   * generation, as with heredoc bodies, heredoc delimiters, and words
+   * extracted from a double-quoted parameter expansion. A detached `Word` carries
+   * no enclosing syntax. Represented expansions still produce uncertainty.
+   */
+  readonly filenameGeneration?: boolean;
 }
 
 /** Literal text determined without running any expansion. */
@@ -231,10 +238,11 @@ function hasUnquotedBracketExpression(parts: readonly Node[]): boolean {
   return brackets.includes("]", openIndex + 1);
 }
 
-/** Interprets one fragment according to its word position and quoting. */
+/** Interprets one fragment within its quoting and filename-generation context. */
 function resolvePart(
   part: Node,
-  position: "unquoted" | "command-argument" | "dblquoted",
+  quoting: "unquoted" | "dblquoted",
+  filenameGeneration = true,
 ): PartResult {
   switch (part.Type) {
     case "TypedNil":
@@ -244,14 +252,11 @@ function resolvePart(
       if (typeof raw !== "string") {
         return { ok: false, reason: "unsupported" };
       }
-      if (position === "dblquoted") {
+      if (quoting === "dblquoted") {
         return { ok: true, text: decodeDblQuotedLit(raw) };
       }
-      const { text, hasGlob } = decodeUnquotedLit(
-        raw,
-        position === "command-argument",
-      );
-      if (hasGlob) {
+      const { text, hasGlob } = decodeUnquotedLit(raw);
+      if (filenameGeneration && hasGlob) {
         return { ok: false, reason: "glob" };
       }
       return { ok: true, text };
@@ -391,13 +396,13 @@ export function resolveWord(
   ) {
     return { static: false, reason: "tilde" };
   }
-  if (hasUnquotedBracketExpression(parts)) {
+  const filenameGeneration = options?.filenameGeneration !== false;
+  if (filenameGeneration && hasUnquotedBracketExpression(parts)) {
     return { static: false, reason: "glob" };
   }
   let text = "";
-  const position = context === "command-argument" ? context : "unquoted";
   for (const part of parts) {
-    const result = resolvePart(part, position);
+    const result = resolvePart(part, "unquoted", filenameGeneration);
     if (!result.ok) {
       return { static: false, reason: result.reason };
     }
@@ -430,7 +435,7 @@ export function singleFieldAssignmentPrefix(
     return undefined;
   }
   for (const part of parts) {
-    const result = resolvePart(part, "command-argument");
+    const result = resolvePart(part, "unquoted");
     if (
       !result.ok &&
       !(part.Type === "SglQuoted" && part.Dollar && result.reason === "locale")

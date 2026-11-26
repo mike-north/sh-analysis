@@ -25,7 +25,9 @@ expectType<FlagsArithm>(inventory.uncertainties[0].node);
 expectType<"opaque-zsh-subscript">(inventory.uncertainties[0].reason);
 expectType<Argv0Resolution>(analysis.resolveArgv0(inventory.commands[0]));
 expectType<WordResolution>(
-  analysis.resolveWord({ Type: "Word", Parts: null } satisfies Word),
+  analysis.resolveWord({ Type: "Word", Parts: null } satisfies Word, {
+    filenameGeneration: false,
+  }),
 );
 expectAssignable<Error>(new analysis.ShAnalyzeMaxDepthError(500));
 expectType<"SH_ANALYSIS_MAX_DEPTH">(

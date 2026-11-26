@@ -20,8 +20,9 @@
  */
 
 /**
- * Unquoted glob metacharacters this module detects in every context:
- * `*` (any string) and `?` (any single character). Bracket expressions
+ * Unescaped characters that can have glob meaning in a literal word part:
+ * `*` (any string), `?` (any single character), and `(` (a possible Zsh
+ * pattern group or glob qualifier). Bracket expressions
  * (`[...]`) are handled separately by {@link decodeUnquotedLit}'s
  * `brackets` output, since — per POSIX 2.13.1 and Bash §3.5.8.1 — a lone
  * unquoted `[` is only glob-significant when a later unquoted `]` closes
@@ -30,7 +31,7 @@
  * different, concatenated `Lit` part of the same `Word` (see
  * `resolveWord`'s cross-part bracket scan).
  */
-const GLOB_METACHARACTERS: ReadonlySet<string> = new Set(["*", "?"]);
+const GLOB_METACHARACTERS: ReadonlySet<string> = new Set(["*", "?", "("]);
 
 /** The two characters {@link decodeUnquotedLit} tracks for cross-part bracket-expression detection. */
 const BRACKET_CHARACTERS: ReadonlySet<string> = new Set(["[", "]"]);
@@ -44,7 +45,7 @@ const BRACKET_CHARACTERS: ReadonlySet<string> = new Set(["[", "]"]);
 export interface UnquotedLitResult {
   /** The decoded literal text (escapes resolved, glob chars included verbatim). */
   readonly text: string;
-  /** An unescaped glob metacharacter in the requested context. */
+  /** An unescaped character with possible glob meaning. */
   readonly hasGlob: boolean;
   /**
    * Every unescaped `[` or `]` in `raw`, concatenated in source order (e.g.
@@ -66,15 +67,12 @@ export interface UnquotedLitResult {
  * doc comment — so there is no such case to handle here.) Escaping a glob
  * metacharacter or bracket character suppresses its special meaning, so
  * `hasGlob` and `brackets` only ever reflect *unescaped* occurrences.
- * In a command argument, an unescaped `(` can start a Zsh pattern group or
- * glob qualifier even when the parser represents it within a literal part.
+ * The caller decides whether filename generation can occur in the word's
+ * enclosing syntax.
  *
  * @internal
  */
-export function decodeUnquotedLit(
-  raw: string,
-  checkZshPatterns = false,
-): UnquotedLitResult {
+export function decodeUnquotedLit(raw: string): UnquotedLitResult {
   let text = "";
   let hasGlob = false;
   let brackets = "";
@@ -87,7 +85,7 @@ export function decodeUnquotedLit(
       i += 2;
       continue;
     }
-    if (GLOB_METACHARACTERS.has(ch) || (checkZshPatterns && ch === "(")) {
+    if (GLOB_METACHARACTERS.has(ch)) {
       hasGlob = true;
     }
     if (BRACKET_CHARACTERS.has(ch)) {

@@ -570,14 +570,69 @@ describe("resolveWord — options.context: assignment-value colon-tilde expansio
   });
 });
 
-describe("resolveWord — literal parentheses outside command arguments", () => {
+describe("resolveWord — possible Zsh globbing without a context", () => {
+  const zsh = { Variant: LangZsh };
+  const glob = { static: false, reason: "glob" };
+
+  it("reports glob uncertainty for a Zsh command argument with a qualifier", () => {
+    const word = commandArgs(sh`printf '%s\n' é-one.txt(N) END`, LangZsh)[2];
+    expect(resolveWord(word)).toEqual(glob);
+  });
+
+  it("reports glob uncertainty for a Zsh redirection target", () => {
+    const file = parseSync("cat <é-(one|two).txt", zsh);
+    const word = assertDefined(
+      file.Stmts?.[0]?.Redirs?.[0]?.Word,
+      "missing redirection target",
+    );
+    expect(resolveWord(word)).toEqual(glob);
+  });
+
+  it("reports glob uncertainty for a Zsh for-loop item", () => {
+    const file = parseSync(
+      sh`for f in é-(one|two).txt(N); do printf '%s\n' "$f"; done`,
+      zsh,
+    );
+    const cmd = file.Stmts?.[0]?.Cmd;
+    if (cmd?.Type !== "ForClause" || cmd.Loop?.Type !== "WordIter") {
+      throw new Error("missing for-loop word list");
+    }
+    const word = assertDefined(cmd.Loop.Items?.[0], "missing for-loop item");
+    expect(resolveWord(word)).toEqual(glob);
+  });
+
+  it("reports glob uncertainty for a Zsh array element", () => {
+    const file = parseSync("arr=(é-(one|two).txt(N))", zsh);
+    const cmd = file.Stmts?.[0]?.Cmd;
+    if (cmd?.Type !== "CallExpr") throw new Error("missing array assignment");
+    const word = assertDefined(
+      cmd.Assigns?.[0]?.Array?.Elems?.[0]?.Value,
+      "missing array element",
+    );
+    expect(resolveWord(word)).toEqual(glob);
+  });
+
+  it("reports glob uncertainty for an unquoted Zsh parameter default", () => {
+    const argument = argWord("${V:-é-one.txt(N)}", LangZsh);
+    const expansion = argument.Parts?.[0];
+    if (expansion?.Type !== "ParamExp")
+      throw new Error("missing parameter expansion");
+    const word = assertDefined(expansion.Exp?.Word, "missing default operand");
+    expect(resolveWord(word)).toEqual(glob);
+  });
+});
+
+describe("resolveWord — literal parentheses with filename generation suppressed", () => {
   it("keeps literal parentheses in an expanding heredoc body", () => {
     const file = parseSync("cat <<EOF\né(paren)\nEOF\n");
     const hdoc = assertDefined(
       file.Stmts?.[0]?.Redirs?.[0]?.Hdoc,
       "missing heredoc body",
     );
-    expect(resolveWord(hdoc)).toEqual({ static: true, text: "é(paren)\n" });
+    expect(resolveWord(hdoc, { filenameGeneration: false })).toEqual({
+      static: true,
+      text: "é(paren)\n",
+    });
   });
 
   it("keeps literal parentheses in a Zsh heredoc delimiter", () => {
@@ -588,7 +643,10 @@ describe("resolveWord — literal parentheses outside command arguments", () => 
       file.Stmts?.[0]?.Redirs?.[0]?.Word,
       "missing heredoc delimiter",
     );
-    expect(resolveWord(delimiter)).toEqual({ static: true, text: "E(OF)" });
+    expect(resolveWord(delimiter, { filenameGeneration: false })).toEqual({
+      static: true,
+      text: "E(OF)",
+    });
   });
 
   it("keeps literal parentheses in a parameter expansion default operand", () => {
@@ -602,7 +660,23 @@ describe("resolveWord — literal parentheses outside command arguments", () => 
       expansion.Exp?.Word,
       "missing default operand",
     );
-    expect(resolveWord(operand)).toEqual({ static: true, text: "é(paren)" });
+    expect(resolveWord(operand, { filenameGeneration: false })).toEqual({
+      static: true,
+      text: "é(paren)",
+    });
+  });
+
+  it("uses explicit filename generation context for a Zsh here-string", () => {
+    const file = parseSync("cat <<<é-one.txt(N)", { Variant: LangZsh });
+    const word = assertDefined(
+      file.Stmts?.[0]?.Redirs?.[0]?.Word,
+      "missing here-string word",
+    );
+    expect(resolveWord(word)).toEqual({ static: false, reason: "glob" });
+    expect(resolveWord(word, { filenameGeneration: false })).toEqual({
+      static: true,
+      text: "é-one.txt(N)",
+    });
   });
 });
 

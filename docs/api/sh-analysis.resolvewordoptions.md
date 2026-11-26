@@ -47,9 +47,28 @@ Description
 
 _(Optional)_ Which grammar position `word` occupies. Both positions allow tilde expansion at the start of the word.
 
-- `'command-argument'` — a simple-command word. In normal Bash mode, assignment-shaped arguments such as `ARG=~/x` and `ARG=a:~/x` can expand an unquoted tilde after the assignment operator or a colon in the value. Ordinary arguments such as `a:~/x` keep that tilde literal. An unquoted `(` can start a Zsh pattern group or glob qualifier here. - `'assignment-value'` — the value side of a shell assignment (e.g. the `/foo:~/bar` in `PATH=/foo:~/bar`<!-- -->). Bash additionally expands an unquoted tilde immediately following an unquoted colon in the value. Zsh can also expand that tilde when the slash is quoted or escaped. This context accounts for both behaviors.
+- `'command-argument'` — a simple-command word. In normal Bash mode, assignment-shaped arguments such as `ARG=~/x` and `ARG=a:~/x` can expand an unquoted tilde after the assignment operator or a colon in the value. Ordinary arguments such as `a:~/x` keep that tilde literal. - `'assignment-value'` — the value side of a shell assignment (e.g. the `/foo:~/bar` in `PATH=/foo:~/bar`<!-- -->). Bash additionally expands an unquoted tilde immediately following an unquoted colon in the value. Zsh can also expand that tilde when the slash is quoted or escaped. This context accounts for both behaviors.
 
 With the option omitted, either position can trigger a tilde result. This accounts for both possible uses of a bare `Word` node.
+
+</td></tr>
+<tr><td>
+
+[filenameGeneration?](./sh-analysis.resolvewordoptions.filenamegeneration.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+_(Optional)_ Whether to check literal text for filename generation. Defaults to `true`<!-- -->, which covers possible Zsh pattern groups and glob qualifiers even when the word's position is unknown.
+
+Set to `false` when the enclosing syntax suppresses filename generation, as with heredoc bodies, heredoc delimiters, and words extracted from a double-quoted parameter expansion. A detached `Word` carries no enclosing syntax. Represented expansions still produce uncertainty.
 
 </td></tr>
 </tbody></table>

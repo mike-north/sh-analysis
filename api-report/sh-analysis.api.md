@@ -124,6 +124,7 @@ export function resolveWord(word: Node_2, options?: ResolveWordOptions): WordRes
 // @public
 export interface ResolveWordOptions {
     readonly context?: "command-argument" | "assignment-value";
+    readonly filenameGeneration?: boolean;
 }
 
 // @public
