@@ -108,8 +108,8 @@ export interface ResolveWordOptions {
    * - `'assignment-value'` — the value side of a shell assignment (e.g.
    *   the `/foo:~/bar` in `PATH=/foo:~/bar`). Bash additionally expands an
    *   unquoted tilde immediately following an unquoted colon in the value.
-   *   Zsh can also expand that tilde when the slash is quoted or escaped.
-   *   This context accounts for both behaviors.
+   *   Zsh can also expand a tilde after a backslash-escaped colon or before
+   *   a quoted or escaped slash. This context accounts for both shells.
    *
    * Both positions also establish the escape rules for top-level `Lit` parts.
    * With the option omitted, either position can trigger a tilde result, and
@@ -126,9 +126,13 @@ export interface ResolveWordOptions {
    * even when the word's position is unknown.
    *
    * Set to `false` when the enclosing syntax suppresses filename
-   * generation, as with heredoc bodies, heredoc delimiters, and words
-   * extracted from a double-quoted parameter expansion. Escape decoding is
-   * independent of this option. Represented expansions still produce uncertainty.
+   * generation, as with heredoc bodies and heredoc delimiters. Escape decoding
+   * is independent of this option. Represented expansions still produce uncertainty.
+   *
+   * An operand detached from inside a double-quoted parameter expansion loses
+   * the enclosing quoting context. Resolving the detached operand can produce
+   * text that differs from the shell's output. Pass the enclosing word to
+   * observe the parameter expansion.
    */
   readonly filenameGeneration?: boolean;
 }
@@ -147,14 +151,15 @@ interface PartFail {
 type PartResult = PartOk | PartFail;
 
 /**
- * Finds eligible tildes after an unquoted colon in an assignment value.
+ * Finds eligible tildes in assignment values and assignment-shaped arguments.
  * A nonzero offset skips a command operand's assignment prefix in the
  * first literal and permits a tilde immediately after the equals.
  *
- * For Bash command arguments, a candidate prefix must remain unquoted
- * through the end of the word or until an unquoted slash or colon. Assignment
- * values also allow Zsh's treatment of quoted delimiters. Adjacent literal
- * parts share the prefix state.
+ * Bash command arguments require an unquoted preceding colon and an unquoted
+ * prefix through the end of the word or until an unquoted slash or colon.
+ * Assignment values also allow Zsh's treatment of a backslash-escaped
+ * preceding colon and a quoted or escaped slash. Adjacent literal parts
+ * share the prefix state.
  */
 function hasAssignmentValueTilde(
   parts: readonly Node[],
@@ -177,9 +182,7 @@ function hasAssignmentValueTilde(
     while (i < raw.length) {
       const ch = raw[i];
       if (ch === "\\" && i + 1 < raw.length) {
-        // An escaped character (whatever it is) is never an unescaped `:`
-        // or `~`, and breaks adjacency for the purposes of this scan.
-        followsDelimiter = false;
+        followsDelimiter = !requireUnquotedPrefix && raw[i + 1] === ":";
         inTildePrefix = false;
         i += 2;
         continue;

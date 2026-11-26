@@ -559,13 +559,21 @@ describe("resolveWord — options.context: assignment-value colon-tilde expansio
     });
   });
 
-  it("an escaped colon does not enable colon-adjacent tilde expansion", () => {
-    // `a\:~b`: the backslash escapes the colon, so it is not the unquoted
-    // `:` §3.5.2 requires immediately before the triggering `~`.
-    const word = assignValueWord(sh`A=a\:~b`);
-    expect(resolveWord(word, { context: "assignment-value" })).toEqual({
+  it("reports tilde uncertainty after an escaped colon in a Zsh assignment value", () => {
+    // Zsh 5.9 expands `A=a\:~/x` to `a:/first/x` or `a:/second/x` as HOME changes.
+    const word = assignValueWord(sh`A=a\:~/x`, LangZsh);
+    const expected = { static: false, reason: "tilde" };
+    expect(resolveWord(word, { context: "assignment-value" })).toEqual(
+      expected,
+    );
+    expect(resolveWord(word)).toEqual(expected);
+  });
+
+  it("keeps a tilde after an escaped colon literal in a Bash assignment-shaped argument", () => {
+    const word = argWord(sh`A=a\:~/x`);
+    expect(resolveWord(word, { context: "command-argument" })).toEqual({
       static: true,
-      text: "a:~b",
+      text: "A=a:~/x",
     });
   });
 

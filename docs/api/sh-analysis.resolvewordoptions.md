@@ -47,7 +47,7 @@ Description
 
 _(Optional)_ Which grammar position `word` occupies. Both positions allow tilde expansion at the start of the word.
 
-- `'command-argument'` — a simple-command word. In normal Bash mode, assignment-shaped arguments such as `ARG=~/x` and `ARG=a:~/x` can expand an unquoted tilde after the assignment operator or a colon in the value. Ordinary arguments such as `a:~/x` keep that tilde literal. - `'assignment-value'` — the value side of a shell assignment (e.g. the `/foo:~/bar` in `PATH=/foo:~/bar`<!-- -->). Bash additionally expands an unquoted tilde immediately following an unquoted colon in the value. Zsh can also expand that tilde when the slash is quoted or escaped. This context accounts for both behaviors.
+- `'command-argument'` — a simple-command word. In normal Bash mode, assignment-shaped arguments such as `ARG=~/x` and `ARG=a:~/x` can expand an unquoted tilde after the assignment operator or a colon in the value. Ordinary arguments such as `a:~/x` keep that tilde literal. - `'assignment-value'` — the value side of a shell assignment (e.g. the `/foo:~/bar` in `PATH=/foo:~/bar`<!-- -->). Bash additionally expands an unquoted tilde immediately following an unquoted colon in the value. Zsh can also expand a tilde after a backslash-escaped colon or before a quoted or escaped slash. This context accounts for both shells.
 
 Both positions also establish the escape rules for top-level `Lit` parts. With the option omitted, either position can trigger a tilde result, and a top-level literal with a backslash can report `'unsupported'` because the enclosing escape rules are unknown.
 
@@ -68,7 +68,9 @@ boolean
 
 _(Optional)_ Whether to check literal text for filename generation. Defaults to `true`<!-- -->, which covers possible Zsh pattern groups and glob qualifiers even when the word's position is unknown.
 
-Set to `false` when the enclosing syntax suppresses filename generation, as with heredoc bodies, heredoc delimiters, and words extracted from a double-quoted parameter expansion. Escape decoding is independent of this option. Represented expansions still produce uncertainty.
+Set to `false` when the enclosing syntax suppresses filename generation, as with heredoc bodies and heredoc delimiters. Escape decoding is independent of this option. Represented expansions still produce uncertainty.
+
+An operand detached from inside a double-quoted parameter expansion loses the enclosing quoting context. Resolving the detached operand can produce text that differs from the shell's output. Pass the enclosing word to observe the parameter expansion.
 
 </td></tr>
 </tbody></table>
