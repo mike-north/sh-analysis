@@ -1,9 +1,8 @@
 /**
  * Decodes `$'...'` (Bash ANSI-C Quoting) within an explicit Unicode-text domain.
- * Unicode escapes require non-NUL scalar values. Byte escapes require non-NUL
- * ASCII; non-ASCII runs remain unsupported even if they could form UTF-8, since
- * decoding shell byte strings or modeling arbitrary locale encodings is outside
- * this operation. Literal Unicode text assumes a UTF-8 shell locale.
+ * Unicode escapes support non-NUL ASCII scalars. The shell locale determines
+ * the encoding of other scalars. Byte escapes require non-NUL ASCII. Literal
+ * Unicode characters in the quoted part already carry text from the AST.
  *
  * mvdan/sh's parser does **not** perform this decoding: for a `SglQuoted`
  * word part with `Dollar: true`, the upstream `Value` field is the raw,
@@ -135,19 +134,15 @@ function readOctalDigits(
 }
 
 /**
- * The result of {@link decodeAnsiCString}: supported Unicode text, or `ok: false`
- * for NUL, non-ASCII byte escapes or a `\u`/`\U` escape whose value
- * has no corresponding Unicode character (see {@link MAX_UNICODE_CODE_POINT}'s
- * doc comment for why that case can't be decoded to an exact JavaScript
- * string, and can't be left as literal un-decoded text either without
- * claiming a false `static: true` result). Never throws — callers (see
- * `resolveWord`'s `SglQuoted` handling) turn `ok: false` into
- * `{ static: false, reason: 'unsupported' }` for the whole word.
+ * Supported Unicode text or the reason the shell output cannot be determined
+ * as exact text. Non-ASCII Unicode scalars depend on the shell locale. NUL,
+ * non-ASCII byte escapes and non-scalar Unicode escapes are unsupported.
  *
  * @internal
  */
 export type AnsiCDecodeResult =
-  { readonly ok: true; readonly text: string } | { readonly ok: false };
+  | { readonly ok: true; readonly text: string }
+  | { readonly ok: false; readonly reason: "locale" | "unsupported" };
 
 /**
  * Decodes the raw inner text of a `$'...'` (ANSI-C quoted) string per Bash
@@ -176,7 +171,7 @@ export function decodeAnsiCString(raw: string): AnsiCDecodeResult {
       // `i < raw.length` (the while guard) means indexing here is always
       // in-bounds and `ch` is a real character, not `undefined`.
       if (ch === "\0") {
-        return { ok: false };
+        return { ok: false, reason: "unsupported" };
       }
       text += ch;
       i += 1;
@@ -238,7 +233,7 @@ export function decodeAnsiCString(raw: string): AnsiCDecodeResult {
         const { value, length } = readHexDigits(raw, i + 2, 2);
         if (length > 0) {
           if (!isSupportedByte(value)) {
-            return { ok: false };
+            return { ok: false, reason: "unsupported" };
           }
           text += String.fromCharCode(value);
           i += 2 + length;
@@ -248,24 +243,13 @@ export function decodeAnsiCString(raw: string): AnsiCDecodeResult {
         }
         break;
       }
-      case "u": {
-        const { value, length } = readHexDigits(raw, i + 2, 4);
-        if (length === 0) {
-          text += ch;
-          i += 1;
-          break;
-        }
-        // BMP surrogate values are representable UTF-16 code units but do
-        // not describe Unicode text; Bash emits their invalid UTF-8 bytes.
-        if (value === 0 || !isUnicodeScalar(value)) {
-          return { ok: false };
-        }
-        text += String.fromCodePoint(value);
-        i += 2 + length;
-        break;
-      }
+      case "u":
       case "U": {
-        const { value, length } = readHexDigits(raw, i + 2, 8);
+        const { value, length } = readHexDigits(
+          raw,
+          i + 2,
+          next === "u" ? 4 : 8,
+        );
         if (length === 0) {
           // Not a recognized numeric escape (no valid hex digit at all):
           // leave un-decoded, same as any other unrecognized escape.
@@ -277,9 +261,12 @@ export function decodeAnsiCString(raw: string): AnsiCDecodeResult {
           // A syntactically recognized escape can still name a non-scalar
           // value. Report uncertainty for the whole word instead of encoding
           // a replacement or merging independent surrogate escapes.
-          return { ok: false };
+          return { ok: false, reason: "unsupported" };
         }
-        text += String.fromCodePoint(value);
+        if (!isSupportedByte(value)) {
+          return { ok: false, reason: "locale" };
+        }
+        text += String.fromCharCode(value);
         i += 2 + length;
         break;
       }
@@ -291,12 +278,12 @@ export function decodeAnsiCString(raw: string): AnsiCDecodeResult {
           // so they cannot support this operation's exact Unicode-text claim.
           const operand = controlChar.charCodeAt(0);
           if (operand > 0x7f) {
-            return { ok: false };
+            return { ok: false, reason: "unsupported" };
           }
           // ASCII control notation selects the low five bits; '?' denotes DEL.
           const code = controlChar === "?" ? 0x7f : operand & 0x1f;
           if (!isSupportedByte(code)) {
-            return { ok: false };
+            return { ok: false, reason: "unsupported" };
           }
           text += String.fromCharCode(code);
           // A doubled backslash is one control operand. A single backslash
@@ -314,7 +301,7 @@ export function decodeAnsiCString(raw: string): AnsiCDecodeResult {
           // Bash stores octal escape results as bytes, including modulo-256 wrapping.
           const byte = value & 0xff;
           if (!isSupportedByte(byte)) {
-            return { ok: false };
+            return { ok: false, reason: "unsupported" };
           }
           text += String.fromCharCode(byte);
           i += 1 + length;

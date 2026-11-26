@@ -182,16 +182,11 @@ describe("resolveWord — criterion 1: positive (static) resolution table", () =
     // \uHHHH: Unicode code point, one to four hex digits. U+0041 = 'A'.
     { label: '$\\u0041 (Unicode BMP -> "A")', src: sh`$'\u0041'`, text: "A" },
     // \UHHHHHHHH: Unicode code point, one to eight hex digits.
-    // U+00000041 = 'A'; U+0001F389 = 🎉 (PARTY POPPER, astral plane).
+    // U+00000041 is ASCII 'A'.
     {
       label: '$\\U00000041 (Unicode, 8 digits -> "A")',
       src: sh`$'\U00000041'`,
       text: "A",
-    },
-    {
-      label: "$\\U0001F389 (Unicode astral code point -> emoji)",
-      src: sh`$'\U0001F389'`,
-      text: "\u{1F389}",
     },
     // \cx: control-x character. \cA = 0x41 ('A') XOR 0x40 = 0x01.
     { label: "$\\cA (control character)", src: sh`$'\cA'`, text: "\x01" },
@@ -248,15 +243,11 @@ describe("resolveWord — regression: out-of-range $'\\U...' ANSI-C code point m
     });
   });
 
-  it("still decodes the in-range boundary $'\\U0010FFFF' (the highest valid code point)", () => {
+  it("reports the highest Unicode scalar $'\\U0010FFFF' as locale-dependent", () => {
     expect(resolve(sh`$'\U0010FFFF'`)).toEqual({
-      static: true,
-      text: "\u{10ffff}",
+      static: false,
+      reason: "locale",
     });
-  });
-
-  it("still decodes $'\\U0001F389' (in-range astral code point, already in the positive table) correctly", () => {
-    expect(resolve(sh`$'\U0001F389'`)).toEqual({ static: true, text: "🎉" });
   });
 
   // U+D800 is not a Unicode scalar; the dedicated native-byte suite proves
@@ -513,14 +504,25 @@ describe("resolveWord — options.context: assignment-value colon-tilde expansio
     });
   });
 
+  it("detects a tilde after an assignment-shaped operand's equals with no context", () => {
+    expect(resolveWord(argWord("ARG=~/x"))).toEqual({
+      static: false,
+      reason: "tilde",
+    });
+  });
+
+  it("keeps an embedded equals-tilde literal in an explicit assignment value", () => {
+    expect(
+      resolveWord(assignValueWord("WRAPPED=ARG=~/x"), {
+        context: "assignment-value",
+      }),
+    ).toEqual({ static: true, text: "ARG=~/x" });
+  });
+
   // `echo a:~b`'s argument word is *not* an assignment — real bash leaves
   // it entirely literal (verified: `bash -c 'echo a:~b'` prints `a:~b`).
-  // resolveWord can't see that grammatical context from a bare Word node,
-  // so its documented conservative default (omitted options) still reports
-  // "tilde" here — this is the one place in this suite where the
-  // conservative default's result differs from real bash's behavior for
-  // that word's actual grammatical position, by design (see
-  // `ResolveWordOptions.context`'s doc comment).
+  // Without context the resolver also accounts for assignment-value
+  // semantics, so it reports a possible tilde expansion here.
   it('an ordinary command-argument word with a colon-adjacent tilde reports "tilde" when no context is given (conservative default)', () => {
     const word = argWord("a:~b");
     expect(resolveWord(word)).toEqual({ static: false, reason: "tilde" });
@@ -583,8 +585,8 @@ describe("resolveWord — criterion 3: multibyte fidelity", () => {
     });
   });
 
-  it("resolves an emoji decoded from a $'\\U...' ANSI-C escape to the exact character", () => {
-    expect(resolve(sh`$'\U0001F389'`)).toEqual({ static: true, text: "🎉" });
+  it("preserves literal multibyte text in an ANSI-C quoted word", () => {
+    expect(resolve(sh`$'🎉'`)).toEqual({ static: true, text: "🎉" });
   });
 });
 

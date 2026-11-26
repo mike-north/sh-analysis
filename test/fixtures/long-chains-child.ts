@@ -143,7 +143,7 @@ function describeContext(
       case "loop":
         return `loop:${frame.role}`;
       case "function":
-        return `function:${String(frame.name)}`;
+        return `function:${frame.names.map(String).join(",")}`;
       case "and":
       case "or":
         return `${frame.kind}:${frame.side}`;

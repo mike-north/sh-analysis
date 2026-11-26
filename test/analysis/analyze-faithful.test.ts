@@ -94,13 +94,16 @@ describe("analysis of faithful syntax records", () => {
   it("preserves byte-valued function names in command contexts", () => {
     const name = new Uint8Array([0xff]);
     const root = syntheticNode("FuncDecl", {
-      Name: syntheticNode("Lit", { Value: name }),
+      Names: [
+        syntheticNode("Lit", { Value: name }),
+        syntheticNode("Lit", { Value: "alias" }),
+      ],
       Body: syntheticNode("Stmt", {
         Cmd: syntheticNode("CallExpr", { Args: [literal("pwd")] }),
       }),
     });
     expect(enumerateCommands(root).commands[0].context).toEqual([
-      { kind: "function", name },
+      { kind: "function", names: [name, "alias"] },
     ]);
   });
 

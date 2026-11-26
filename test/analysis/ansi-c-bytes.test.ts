@@ -41,14 +41,11 @@ it.each([
   [String.raw`\177`, "\x7f"],
   [String.raw`\cA`, "\x01"],
   [String.raw`\n\t`, "\n\t"],
-  [String.raw`\u00E9`, "é"],
-  [String.raw`\U0001F600`, "😀"],
-])(
-  "retains supported ASCII bytes and non-NUL scalar text %s",
-  (escaped, text) => {
-    expect(resolution(escaped)).toEqual({ static: true, text });
-  },
-);
+  [String.raw`\u007F`, "\x7f"],
+  [String.raw`\U00000041`, "A"],
+])("retains supported ASCII escapes %s", (escaped, text) => {
+  expect(resolution(escaped)).toEqual({ static: true, text });
+});
 
 it.each([
   [String.raw`\xFF`, [0xff]],

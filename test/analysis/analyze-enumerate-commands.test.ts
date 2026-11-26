@@ -241,6 +241,25 @@ describe("enumerateCommands — criterion 1: compound coverage (one context kind
     expect(siteTexts(src)).toEqual(["c1", "c2"]);
   });
 
+  it("enumerates direct commands and pattern substitutions from a CaseItem subtree", () => {
+    const src =
+      "case x in $(printf x)) printf a; printf b;; y) printf c;; esac";
+    const clause = parseSync(src).Stmts?.[0]?.Cmd;
+    if (clause?.Type !== "CaseClause") throw new Error("missing case clause");
+    const item = assertDefined(
+      clause.Items?.[0] ?? undefined,
+      "missing case arm",
+    );
+    const { commands } = enumerateCommands(item);
+    expect(
+      commands.map(({ node, context }) => [sourceText(src, node), context]),
+    ).toEqual([
+      ["printf x", [{ kind: "cmdSubst" }]],
+      ["printf a", [{ kind: "case" }]],
+      ["printf b", [{ kind: "case" }]],
+    ]);
+  });
+
   it("'loop': a `for` loop tags only the body (role: 'body'); a `while` loop tags both cond and body", () => {
     const forSrc = "for i in 1 2; do body1; done";
     expect(enumerate(forSrc).map((s) => s.context)).toEqual([
@@ -259,9 +278,30 @@ describe("enumerateCommands — criterion 1: compound coverage (one context kind
     const src = "greet() { fb; }";
     const sites = enumerate(src);
     expect(sites.map((s) => s.context)).toEqual([
-      [{ kind: "function", name: "greet" }],
+      [{ kind: "function", names: ["greet"] }],
     ]);
     expect(siteTexts(src)).toEqual(["fb"]);
+  });
+
+  it("preserves every Zsh function name in nested command contexts", () => {
+    const src = "function a b { inner() { echo hi; }; }";
+    const sites = enumerate(src, LangZsh);
+    expect(
+      sites.map(({ node, context }) => [sourceText(src, node), context]),
+    ).toEqual([
+      [
+        "echo hi",
+        [
+          { kind: "function", names: ["a", "b"] },
+          { kind: "function", names: ["inner"] },
+        ],
+      ],
+    ]);
+  });
+
+  it("records an empty name list for a Zsh anonymous function", () => {
+    const [site] = enumerate("function { echo hi; }", LangZsh);
+    expect(site.context).toEqual([{ kind: "function", names: [] }]);
   });
 
   it("'background': `cmd &` tags the statement with a background frame", () => {
@@ -510,18 +550,9 @@ describe("enumerateCommands — negative/edge cases", () => {
 });
 
 describe("enumerateCommands — argv resolved with command-argument semantics (regression: colon-tilde)", () => {
-  // Bash Reference Manual §3.5.2 "Tilde Expansion": an unquoted `~`
-  // immediately following an unquoted `:` is only special-cased for
-  // certain colon-separated *assignment values* (e.g. `PATH=/foo:~/bar`).
-  // An ordinary command-argument word has no such rule — only a
-  // word-initial unquoted `~` triggers expansion there, so `a:~/b` as a
-  // command argument is literal, static text, not a tilde-expansion site.
-  // Every `CallExpr` word is command-argument position (never an
-  // assignment value), so `enumerateCommands` must resolve `argv`/`argv0`
-  // with `resolveWord`'s `{ context: 'command-argument' }` — omitting the
-  // option falls back to `resolveWord`'s more conservative
-  // `'assignment-value'` default (see `ResolveWordOptions.context`'s doc
-  // comment) and would wrongly report this word as `static: false`.
+  // Bash Reference Manual §3.5.2 allows tilde expansion after an unquoted
+  // colon in assignment values and in assignment-shaped arguments in normal
+  // Bash mode. An ordinary argument such as a:~/b keeps the tilde literal.
   it("resolves a colon-tilde command argument as static text, not a tilde-expansion site", () => {
     const src = "cmd a:~/b";
     const sites = enumerate(src);
@@ -529,6 +560,27 @@ describe("enumerateCommands — argv resolved with command-argument semantics (r
     const site = assertDefined(sites[0], "unreachable — length checked above");
     expect(site.argv).toHaveLength(2);
     expect(site.argv[1]).toEqual({ static: true, text: "a:~/b" });
+  });
+
+  it.each(["ARG=~/x", "ARG=prefix:~/x", 'ARG="prefix":~/x', "ARG+=~/x"])(
+    "reports tilde expansion in the assignment-shaped operand %s",
+    (operand) => {
+      const [site] = enumerate("printf " + operand);
+      expect(site.argv[1]).toEqual({ static: false, reason: "tilde" });
+    },
+  );
+
+  it.each([
+    ['ARG="~"/x', "ARG=~/x"],
+    [String.raw`ARG=\~/x`, "ARG=~/x"],
+    ['"ARG"=~/x', "ARG=~/x"],
+    [String.raw`ARG\=~/x`, "ARG=~/x"],
+    [String.raw`ARG=prefix\:~/x`, "ARG=prefix:~/x"],
+    ["ARG=prefix=~/x", "ARG=prefix=~/x"],
+    ["1ARG=~/x", "1ARG=~/x"],
+  ])("keeps the inactive tilde in %s literal", (operand, text) => {
+    const [site] = enumerate("printf " + operand);
+    expect(site.argv[1]).toEqual({ static: true, text });
   });
 
   it("resolves an scp-style host:~/path argument as static text too", () => {

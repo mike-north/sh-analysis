@@ -4,7 +4,7 @@
 
 ## CommandSite.argv0 property
 
-`resolveWord` applied to the first word (`argv[0]`<!-- -->), with `{ context: 'command-argument' }` — every `CallExpr` word is an ordinary command-argument position, never an assignment value, so only a word-initial unquoted `~` triggers tilde expansion (an unquoted `~` after a `:`<!-- -->, e.g. `a:~/b`<!-- -->, is literal text here — see `ResolveWordOptions.context`<!-- -->'s doc comment).
+`resolveWord` applied to the first word (`argv[0]`<!-- -->), using `{ context: 'command-argument' }` for simple-command tilde expansion.
 
 **Signature:**
 

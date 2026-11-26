@@ -57,7 +57,7 @@ export type CommandContext = {
     readonly role: "body" | "cond";
 } | {
     readonly kind: "function";
-    readonly name: GoString;
+    readonly names: readonly GoString[];
 } | {
     readonly kind: "background";
 } | {

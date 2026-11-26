@@ -91,15 +91,17 @@ $'tab\there'       {"static":true,"text":"tab\there"}
 "$USER"            {"static":false,"reason":"expansion"}
 ```
 
-Quotes and escapes are removed for you. You can also call `resolveWord(word)` on any `Word` node
-yourself; pass `{ context: "assignment-value" }` when the word is the value of `NAME=value`, where
-`~` after `:` also expands.
+Quotes and escapes are removed for you. When calling `resolveWord(word)` directly, pass
+`{ context: "assignment-value" }` for the value in `NAME=value` or `{ context: "command-argument" }`
+for a simple-command word. In normal Bash mode, assignment-shaped arguments such as `NAME=~/x`
+and `NAME=a:~/x` can expand tildes.
 
 ### List every command and how it is reached
 
 `enumerateCommands` walks the whole tree, including command substitutions, process substitutions,
 redirection targets, functions, loops and conditionals. Each site has the `CallExpr` node, its
-resolved words and a `context` path from the outermost construct inwards.
+resolved words and a `context` path from the outermost construct inwards. A function context
+has a `names` array in declaration order. For an anonymous function, the array is empty.
 
 ```js
 import { parseSync } from "sh-ast";
@@ -236,17 +238,17 @@ The defaults cover `bash`, `sh`, `dash`, `zsh`, `ksh`/`ksh93` and `mksh`
 `sh-analysis` reports what the text says. It does not run anything, read the filesystem or look
 up `PATH`. When the answer depends on run time, you get `static: false` and a reason:
 
-| You see                                             | Because                                                                 |
-| --------------------------------------------------- | ----------------------------------------------------------------------- |
-| `{ static: false, reason: "expansion" }`            | The word has `$VAR`, `$(…)`, `$((…))` or `<(…)`                         |
-| `{ static: false, reason: "tilde" }`                | An unquoted `~` depends on `$HOME` or the user database                 |
-| `{ static: false, reason: "glob" }`                 | `*`, `?`, `[…]` or an extended glob depends on which files exist        |
-| `{ static: false, reason: "brace" }`                | `{a,b}` or `{1..3}` may expand to several words                         |
-| `{ static: false, reason: "locale" }`               | `$"…"` is translated at run time                                        |
-| `{ static: false, reason: "unsupported" }`          | An escape can't be turned into exact text, such as `$'\xff'` or `$'\0'` |
-| `{ static: false, reason: "embedded-command" }`     | The command is inside a string, as in `bash -c '…'` or `env -S '…'`     |
-| `{ static: false, reason: "unknown-flag" }`         | A wrapper flag isn't modelled, so the wrapped command can't be located  |
-| `{ static: false, reason: "ambiguous-assignment" }` | `env =value` behaves differently across `env` implementations           |
+| You see                                             | Because                                                                             |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `{ static: false, reason: "expansion" }`            | The word has `$VAR`, `$(…)`, `$((…))` or `<(…)`                                     |
+| `{ static: false, reason: "tilde" }`                | An unquoted `~` depends on `$HOME` or the user database                             |
+| `{ static: false, reason: "glob" }`                 | `*`, `?`, `[…]` or an extended glob depends on which files exist                    |
+| `{ static: false, reason: "brace" }`                | `{a,b}` or `{1..3}` may expand to several words                                     |
+| `{ static: false, reason: "locale" }`               | `$"…"` translation or a non-ASCII ANSI-C Unicode escape depends on the shell locale |
+| `{ static: false, reason: "unsupported" }`          | An escape can't be turned into exact text, such as `$'\xff'` or `$'\0'`             |
+| `{ static: false, reason: "embedded-command" }`     | The command is inside a string, as in `bash -c '…'` or `env -S '…'`                 |
+| `{ static: false, reason: "unknown-flag" }`         | A wrapper flag isn't modelled, so the wrapped command can't be located              |
+| `{ static: false, reason: "ambiguous-assignment" }` | `env =value` behaves differently across `env` implementations                       |
 
 A few more things to keep in mind:
 

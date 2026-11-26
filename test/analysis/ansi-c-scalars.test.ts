@@ -1,4 +1,4 @@
-/** ANSI-C Unicode escapes claim text only for Unicode scalar values, independent of UTF-16 storage. */
+/** ANSI-C Unicode escapes depend on scalar validity and the shell locale. */
 import { spawnSync } from "node:child_process";
 import { expect, it } from "vitest";
 import { parseSync } from "sh-ast";
@@ -12,6 +12,28 @@ function resolution(escaped: string) {
     throw new Error("missing ANSI-C argument");
   return resolveWord(call.Args[2]);
 }
+
+it("reports a locale-dependent non-ASCII ANSI-C Unicode escape as non-static", () => {
+  const command = "printf '%s\\n' $'\\u00e9' $'\\u0041' $'\\U0001F600'";
+  for (const [locale, expected] of [
+    ["C", "\\u00E9\nA\n\\U0001F600\n"],
+    ["C.UTF-8", "é\nA\n😀\n"],
+  ]) {
+    const result = spawnSync("bash", ["--noprofile", "--norc", "-c", command], {
+      env: { PATH: process.env.PATH, LC_ALL: locale },
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(0);
+    expect(result.stderr.toString()).toBe("");
+    expect(result.stdout).toEqual(Buffer.from(expected));
+  }
+  expect(resolution("\\u00e9")).toEqual({ static: false, reason: "locale" });
+  expect(resolution("\\U0001F600")).toEqual({
+    static: false,
+    reason: "locale",
+  });
+  expect(resolution("\\u0041")).toEqual({ static: true, text: "A" });
+});
 
 it.each([
   String.raw`\uD800`,
@@ -31,13 +53,12 @@ it("does not combine two separately encoded surrogate escapes into one scalar", 
   });
 });
 
-it.each([
-  [String.raw`\uD7FF`, "\uD7FF"],
-  [String.raw`\uE000`, "\uE000"],
-  [String.raw`\U0001F600`, "😀"],
-])("retains valid scalar control %s", (escaped, text) => {
-  expect(resolution(escaped)).toEqual({ static: true, text });
-});
+it.each([String.raw`\uD7FF`, String.raw`\uE000`])(
+  "reports the valid scalar adjacent to the surrogate interval %s as locale-dependent",
+  (escaped) => {
+    expect(resolution(escaped)).toEqual({ static: false, reason: "locale" });
+  },
+);
 
 it.each([
   [String.raw`\uD800`, [0xed, 0xa0, 0x80], false],

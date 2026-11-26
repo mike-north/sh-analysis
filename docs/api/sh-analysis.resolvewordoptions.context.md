@@ -4,11 +4,11 @@
 
 ## ResolveWordOptions.context property
 
-Which Bash grammar position `word` occupies — the two positions Bash §3.5.2 ("Tilde Expansion") documents distinct tilde-expansion triggers for:
+Which Bash grammar position `word` occupies. Both positions allow tilde expansion at the start of the word.
 
-- `'command-argument'` — an ordinary simple-command argument word (e.g. `echo <word>`<!-- -->). Only a \*word-initial\* unquoted `~` triggers tilde expansion; an unquoted `~` elsewhere in the word (including right after a `:`<!-- -->) is an ordinary character (`echo a:~b` prints `a:~b` literally in real bash). - `'assignment-value'` — the value side of a shell assignment (e.g. `PATH=<word>`<!-- -->, an `Assign` node's `value`<!-- -->). Bash additionally tilde-expands an unquoted `~` immediately following an unquoted `:` anywhere in the value (`PATH=/foo:~/bar` expands the `~/bar` segment) — this is documented for `PATH`<!-- -->-like colon-separated assignment values specifically.
+- `'command-argument'` — a simple-command word. In normal Bash mode, assignment-shaped arguments such as `ARG=~/x` and `ARG=a:~/x` can expand an unquoted tilde after the assignment operator or a colon in the value. Ordinary arguments such as `a:~/x` keep that tilde literal. - `'assignment-value'` — the value side of a shell assignment (e.g. the `/foo:~/bar` in `PATH=/foo:~/bar`<!-- -->). Bash additionally expands an unquoted tilde immediately following an unquoted colon in the value.
 
-\*\*Default: `'assignment-value'` semantics apply whenever this option is omitted.\*\* `resolveWord` takes a bare `Word` node with no grammar context attached, so it cannot see whether its caller extracted that word from a command argument or an assignment value — omitting this option is deliberately treated as the \*more conservative\* of the two (the one that reports `'tilde'` in more cases), so a caller that doesn't know or care about the distinction never under-reports a real tilde-expansion site. Pass `'command-argument'` explicitly to opt into the narrower, word-initial-only check that matches real bash's behavior for ordinary arguments.
+With the option omitted, either position can trigger a tilde result. This accounts for both possible uses of a bare `Word` node.
 
 **Signature:**
 
