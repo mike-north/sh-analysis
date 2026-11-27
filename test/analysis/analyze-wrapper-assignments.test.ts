@@ -10,7 +10,7 @@ import type {
   ResolveArgv0Options,
   WrapperSpec,
 } from "../../src/index.js";
-import { parseSync } from "sh-ast";
+import { LangZsh, parseSync } from "sh-ast";
 import { ShAnalyzeInvalidWrapperSpecError } from "../../src/index.js";
 
 /** Resolve the sole simple command in a fixture without executing its source. */
@@ -99,6 +99,62 @@ describe("utility assignment operands", () => {
       reason: "expansion",
     });
   });
+
+  it.each(["A=~/x", "A=$'\\u00e9'", 'A=~"/x"'])(
+    "finds the wrapped interpreter after the single assignment operand %s",
+    (operand) => {
+      const result = resolve(`env ${operand} bash -c 'printf hi'`);
+      expect(result.chainIndices).toEqual([0, 2, 3]);
+      expect(result.effective).toEqual({
+        static: false,
+        reason: "embedded-command",
+      });
+    },
+  );
+
+  it.each([
+    ["A=~/x$fields", "tilde"],
+    ["A=$'\\u00e9'$fields", "locale"],
+    ["A=~/x*", "tilde"],
+    ["A=$'\\u00e9'[ab]", "glob"],
+  ])(
+    "stops at an assignment-shaped word that can produce multiple fields (%s)",
+    (operand, reason) => {
+      const result = resolve(`env ${operand} bash -c 'printf hi'`);
+      expect(result.chainIndices).toEqual([0, 1]);
+      expect(result.effective).toEqual({ static: false, reason });
+    },
+  );
+
+  it.each([
+    [String.raw`A=$'\u00e9'/printf(:t) '%s\n' actual`, "locale"],
+    [String.raw`A=é/printf(:t) '%s\n' actual`, "glob"],
+    [String.raw`A=$'\u00e9'/missing(N) -i printf '%s\n' actual`, "locale"],
+  ])(
+    "stops at a Zsh glob-qualified assignment-shaped operand (%s)",
+    (operands, reason) => {
+      // Zsh can pass just the matched filename's tail to env or omit a null match.
+      const file = parseSync(`env ${operands}`, { Variant: LangZsh });
+      const [site] = enumerateCommands(file).commands;
+      const result = resolveArgv0(site);
+      expect(result.chainIndices).toEqual([0, 1]);
+      expect(result.effective).toEqual({ static: false, reason });
+    },
+  );
+
+  it.each([
+    String.raw`A=$'\u00e9'/printf'(:t)'`,
+    String.raw`A=$'\u00e9'/printf\(N\)`,
+  ])(
+    "skips a Zsh assignment with protected glob punctuation (%s)",
+    (operand) => {
+      const file = parseSync(`env ${operand} printf`, { Variant: LangZsh });
+      const [site] = enumerateCommands(file).commands;
+      const result = resolveArgv0(site);
+      expect(result.chainIndices).toEqual([0, 2]);
+      expect(result.effective).toEqual({ static: true, text: "printf" });
+    },
+  );
 
   it.each([
     "nice A-B=1 rm",

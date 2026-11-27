@@ -1,7 +1,7 @@
 /** Declaration consumers receive analysis-owned observations over public faithful syntax types. */
 import { expectType, expectError, expectAssignable } from "tsd";
 import { LangZsh, parseSync } from "sh-ast";
-import type { CallExpr, FlagsArithm, Word } from "sh-ast";
+import type { CallExpr, FlagsArithm, GoString, Word } from "sh-ast";
 import * as analysis from "../dist/index.js";
 import type {
   Argv0Resolution,
@@ -17,11 +17,17 @@ expectType<CommandInventory>(inventory);
 expectType<CommandSite[]>(inventory.commands);
 expectType<CommandUncertainty[]>(inventory.uncertainties);
 expectType<CallExpr>(inventory.commands[0].node);
+const frame = inventory.commands[0].context[0];
+if (frame.kind === "function") {
+  expectType<readonly GoString[]>(frame.names);
+}
 expectType<FlagsArithm>(inventory.uncertainties[0].node);
 expectType<"opaque-zsh-subscript">(inventory.uncertainties[0].reason);
 expectType<Argv0Resolution>(analysis.resolveArgv0(inventory.commands[0]));
 expectType<WordResolution>(
-  analysis.resolveWord({ Type: "Word", Parts: null } satisfies Word),
+  analysis.resolveWord({ Type: "Word", Parts: null } satisfies Word, {
+    filenameGeneration: false,
+  }),
 );
 expectAssignable<Error>(new analysis.ShAnalyzeMaxDepthError(500));
 expectType<"SH_ANALYSIS_MAX_DEPTH">(

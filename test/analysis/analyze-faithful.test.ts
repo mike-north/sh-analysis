@@ -91,16 +91,31 @@ describe("analysis of faithful syntax records", () => {
     expect(resolveArgv0(site).effective.static).toBe(false);
   });
 
+  it("preserves a byte-valued single function name in command contexts", () => {
+    const name = Uint8Array.of(255);
+    const file = parseSync("single() { true; }");
+    const declaration = file.Stmts?.[0]?.Cmd;
+    if (declaration?.Type !== "FuncDecl" || declaration.Name === null)
+      throw new Error("Expected a named function");
+    declaration.Name.Value = name;
+    expect(enumerateCommands(file).commands[0].context).toEqual([
+      { kind: "function", names: [name] },
+    ]);
+  });
+
   it("preserves byte-valued function names in command contexts", () => {
     const name = new Uint8Array([0xff]);
     const root = syntheticNode("FuncDecl", {
-      Name: syntheticNode("Lit", { Value: name }),
+      Names: [
+        syntheticNode("Lit", { Value: name }),
+        syntheticNode("Lit", { Value: "alias" }),
+      ],
       Body: syntheticNode("Stmt", {
         Cmd: syntheticNode("CallExpr", { Args: [literal("pwd")] }),
       }),
     });
     expect(enumerateCommands(root).commands[0].context).toEqual([
-      { kind: "function", name },
+      { kind: "function", names: [name, "alias"] },
     ]);
   });
 

@@ -6,7 +6,7 @@
 
 A data-only description of one "transparent wrapper" — a command whose own argv0 is modeled as locating and re-executing another command (`env`<!-- -->, `sudo`<!-- -->, `nohup`<!-- -->, …). [resolveArgv0()](./sh-analysis.resolveargv0.md) interprets every field here structurally (skip N words, recognize this literal flag, …); adding a new `WrapperSpec` never requires a code change to [resolveArgv0()](./sh-analysis.resolveargv0.md) itself — that's what makes [DEFAULT\_TRANSPARENT\_WRAPPERS](./sh-analysis.default_transparent_wrappers.md) data rather than a set of hardcoded `if (name === 'env')` branches, and what lets a caller extend or replace the table with their own project-specific wrappers (e.g. a `with-retry` helper).
 
-Every flag/operand-recognizing field is checked against a word's \*statically resolved\* text only (its `.text` on a [WordResolution](./sh-analysis.wordresolution.md) `static: true` result) — a dynamic word can never be identified as one of a wrapper's own flags or operands (see [resolveArgv0()](./sh-analysis.resolveargv0.md)<!-- -->'s doc comment for why an unrecognizable word always ends the chain rather than being guessed through).
+Flags are matched using statically resolved text. A wrapper's assignment grammar can also match a fixed scalar assignment prefix when the syntax guarantees one field and only its value is uncertain.
 
 This shape may grow new optional fields in a \*\*minor\*\* release as this analyzer models more wrapper flag conventions; existing fields' meaning never changes.
 
@@ -70,7 +70,7 @@ Any of these forms is recognized without a separate `WrapperSpec` field — the 
 
 </td><td>
 
-_(Optional)_ Assignment-operand scanning grammar, independent of the wrapper's name. Each preset defines both which static words are assignments and where option scanning stops; it does not model the utility's other options.
+_(Optional)_ Assignment-operand scanning grammar, independent of the wrapper's name. Each preset defines both which words are assignments and where option scanning stops; it does not model the utility's other options.
 
 - `'shell-identifier'`<!-- -->: the ASCII `NAME=value` rule before `--`<!-- -->; options may resume after an assignment. - `'env'`<!-- -->: after options, consume words containing `=` (including after `--`<!-- -->). The first assignment ends option scanning permanently. Empty names (`=value`<!-- -->) produce `'ambiguous-assignment'` because GNU/glibc and BSD differ on whether they can be installed in the environment. - `'sudo'`<!-- -->: before `--`<!-- -->, consume words containing `=` unless they start with `/` or `=`<!-- -->; option scanning may resume after each assignment.
 

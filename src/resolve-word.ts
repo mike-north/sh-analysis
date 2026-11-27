@@ -14,52 +14,45 @@ import { nodeArray } from "./node-helpers.js";
  *   `ArithmExp` (`$((expr))`), or a `ProcSubst` (`<(cmd)`/`>(cmd)`) part:
  *   its value depends on program state (variables, command output, process
  *   substitution) that only exists at run time.
- * - `'tilde'` — an unquoted, unescaped `~` triggers Bash tilde expansion
- *   (Bash Reference Manual §3.5.2, "Tilde Expansion") at the start of the
- *   word, or — when `resolveWord`'s `context` option is `'assignment-value'`
- *   or omitted — immediately after an unquoted `:` anywhere in the word too
- *   (§3.5.2 also documents this for assignment-statement values, e.g.
- *   `PATH=/foo:~/bar`). Either way: statically shaped, but its value
- *   depends on the filesystem/environment (`$HOME`, NSS user database
- *   lookups) at run time. See `resolveWord`'s `context` parameter doc for
- *   the full command-argument-vs-assignment-value distinction.
- * - `'glob'` — the word contains an unquoted, unescaped glob metacharacter
- *   (`*`/`?`), an unquoted bracket expression (`[...]` — an unquoted `[`
- *   with a later unquoted `]` in the same word, POSIX 2.13.1 / Bash
- *   Reference Manual §3.5.8.1, "Pattern Matching"), or an `ExtGlob` part
- *   (Bash Reference Manual §3.5.8, "Filename Expansion"): its value depends
- *   on which filesystem entries exist at run time.
+ * - `'tilde'` — an unquoted, unescaped `~` can trigger tilde expansion.
+ *   This includes a word-initial tilde, plus eligible tildes after `:` in assignment values
+ *   or after `=` or `:` in assignment-shaped command arguments. The result
+ *   depends on the environment or user database. See
+ *   {@link ResolveWordOptions.context} for the applicable positions.
+ * - `'glob'` — an `ExtGlob` part or possible filename generation from
+ *   unquoted literal text. The literal check recognizes unescaped `*`,
+ *   `?`, and `(` for Zsh pattern groups or qualifiers. It also recognizes
+ *   a bracket expression when an unquoted `[` has a later unquoted `]`
+ *   in the same word. The result depends on the filesystem at run time.
  * - `'brace'` — the word contains a `BraceExp` part or the pinned upstream
  *   `syntax.SplitBraces` produces one on a private observation copy (Bash
  *   Reference Manual §3.5.1, "Brace Expansion"). Parser output is unchanged.
  *   This reports potential expansion in supporting dialects; a bare Word has
  *   no dialect or shell-option state, so even POSIX-parsed words receive the
  *   conservative classification. It does not claim POSIX sh expands braces.
- * - `'locale'` — the word contains a `$"..."` locale-translated string
- *   (Bash Reference Manual §3.1.2.5, "Locale-Specific Translation"): its
- *   value is looked up in the current locale's translation catalog at run
- *   time via `gettext`, regardless of whether its contents also contain an
- *   expansion. `'locale'` takes precedence over any `'expansion'` a
- *   `$"..."` word's *contents* would otherwise report — the `DblQuoted`
- *   node's own `dollar` flag is checked before its children are visited at
- *   all, so e.g. `$"hi $x"` reports `'locale'`, never `'expansion'`.
+ * - `'locale'` — the word contains an ANSI-C Unicode escape for a non-ASCII
+ *   scalar, whose output depends on the shell locale, or a `$"..."` string
+ *   translated using the current locale's catalog (Bash Reference Manual
+ *   §3.1.2.5, "Locale-Specific Translation"). For a locale-translated string,
+ *   the analyzer checks its `DblQuoted.Dollar` flag before visiting any
+ *   children, so `$"hi $x"` reports `'locale'`.
  * - `'unsupported'` — the input cannot support an exact Unicode-text claim:
+ *   a literal contains a backslash whose meaning depends on missing context;
  *   an escape crosses caller-constructed word-part boundaries; a brace candidate
  *   has escape handling this analyzer cannot trust; a word contains nil/typed
  *   nil parts or byte-valued strings; or ANSI-C quoting produces NUL, non-ASCII
  *   byte escapes, or non-scalar Unicode escapes (U+D800..U+DFFF or values above
- *   U+10FFFF, such as `$'\\uD800'` and `$'\\UFFFFFFFF'`). Shell bytes must
- *   not be replaced with invented Latin-1 or replacement text. Supported scalar
- *   Unicode decoding assumes a UTF-8 shell locale; byte-string and arbitrary
- *   locale decoding are outside this text observation.
+ *   U+10FFFF, such as `$'\\uD800'` and `$'\\UFFFFFFFF'`). This analyzer
+ *   reports exact text only for escapes whose output can be represented
+ *   faithfully as a JavaScript string.
  *
  * Reason descriptions do not establish universal precedence among features.
  * Whole-word `unsupported` preflight takes precedence even when a caller has
  * already supplied a `BraceExp`: an escape crossing parts can invalidate the
  * apparent quoting boundaries, and an escape-uncertain brace candidate remains
- * uncertain. Independently quoted or fully protected literal siblings do not
- * suppress a known `BraceExp`. After preflight, existing resolution order can
- * select a triggering tilde or earlier glob before visiting that part.
+ * uncertain. A known `BraceExp` remains observable alongside independently
+ * quoted literals and escapes with known quoting rules. After preflight, an
+ * earlier uncertainty can determine the result before visiting that part.
  *
  * This union may grow in a **minor** release — new mvdan/sh word-part node
  * types, or new statically-shaped-but-dynamic categories, can add new reason
@@ -99,42 +92,49 @@ export type WordResolution =
     };
 
 /**
- * Options controlling {@link resolveWord}'s tilde-expansion detection.
+ * Options controlling expansion detection and escape decoding in {@link resolveWord}.
  *
  * @public
  */
 export interface ResolveWordOptions {
   /**
-   * Which Bash grammar position `word` occupies — the two positions Bash
-   * §3.5.2 ("Tilde Expansion") documents distinct tilde-expansion triggers
-   * for:
+   * Which grammar position `word` occupies. Both positions allow
+   * tilde expansion at the start of the word.
    *
-   * - `'command-argument'` — an ordinary simple-command argument word (e.g.
-   *   `echo <word>`). Only a *word-initial* unquoted `~` triggers tilde
-   *   expansion; an unquoted `~` elsewhere in the word (including right
-   *   after a `:`) is an ordinary character (`echo a:~b` prints `a:~b`
-   *   literally in real bash).
+   * - `'command-argument'` — a simple-command word. In normal Bash mode,
+   *   assignment-shaped arguments such as `ARG=~/x` and `ARG=a:~/x` can
+   *   expand an unquoted tilde after the assignment operator or a colon
+   *   in the value. Ordinary arguments such as `a:~/x` keep that tilde literal.
    * - `'assignment-value'` — the value side of a shell assignment (e.g.
-   *   `PATH=<word>`, an `Assign` node's `value`). Bash additionally
-   *   tilde-expands an unquoted `~` immediately following an unquoted `:`
-   *   anywhere in the value (`PATH=/foo:~/bar` expands the `~/bar`
-   *   segment) — this is documented for `PATH`-like colon-separated
-   *   assignment values specifically.
+   *   the `/foo:~/bar` in `PATH=/foo:~/bar`). Bash additionally expands an
+   *   unquoted tilde immediately following an unquoted colon in the value.
+   *   Zsh can also expand a tilde after a backslash-escaped colon or before
+   *   a quoted or escaped slash. This context accounts for both shells.
    *
-   * **Default: `'assignment-value'` semantics apply whenever this option is
-   * omitted.** `resolveWord` takes a bare `Word` node with no grammar
-   * context attached, so it cannot see whether its caller extracted that
-   * word from a command argument or an assignment value — omitting this
-   * option is deliberately treated as the *more conservative* of the two
-   * (the one that reports `'tilde'` in more cases), so a caller that
-   * doesn't know or care about the distinction never under-reports a real
-   * tilde-expansion site. Pass `'command-argument'` explicitly to opt into
-   * the narrower, word-initial-only check that matches real bash's
-   * behavior for ordinary arguments.
+   * Both positions also establish the escape rules for top-level `Lit` parts.
+   * With the option omitted, either position can trigger a tilde result, and
+   * a top-level literal with a backslash can report `'unsupported'` because
+   * the enclosing escape rules are unknown.
    *
    * @see https://www.gnu.org/software/bash/manual/bash.html#Tilde-Expansion
+   * @see https://zsh.sourceforge.io/Doc/Release/Expansion.html#Filename-Expansion
    */
   readonly context?: "command-argument" | "assignment-value";
+  /**
+   * Whether to check literal text for filename generation. Defaults to
+   * `true`, which covers possible Zsh pattern groups and glob qualifiers
+   * even when the word's position is unknown.
+   *
+   * Set to `false` when the enclosing syntax suppresses filename
+   * generation, as with heredoc bodies and heredoc delimiters. Escape decoding
+   * is independent of this option. Represented expansions still produce uncertainty.
+   *
+   * An operand detached from inside a double-quoted parameter expansion loses
+   * the enclosing quoting context. Resolving the detached operand can produce
+   * text that differs from the shell's output. Pass the enclosing word to
+   * observe the parameter expansion.
+   */
+  readonly filenameGeneration?: boolean;
 }
 
 /** Literal text determined without running any expansion. */
@@ -151,61 +151,63 @@ interface PartFail {
 type PartResult = PartOk | PartFail;
 
 /**
- * True iff `raw` (a `Lit` part's *undecoded* value) begins with a literal
- * `~` character. Only meaningful when checked against a `Word`'s very
- * first part: Bash tilde expansion (§3.5.2) triggers only at the start of
- * a word, so `a~b` (mid-word) and `\~foo` (escaped — `raw` starts with a
- * backslash, not `~`) are correctly excluded, while `~"foo"` (a leading
- * unquoted `~` followed by a separately-quoted part) is correctly
- * included, since it is still a distinct first `Lit` part starting with an
- * unquoted `~`.
- */
-function startsWithUnescapedTilde(raw: string): boolean {
-  return raw.startsWith("~");
-}
-
-/**
- * True iff an unquoted, unescaped `~` immediately follows an unquoted,
- * unescaped `:` anywhere across `parts` — Bash §3.5.2's assignment-value
- * tilde-expansion trigger (e.g. the `~/bar` in `PATH=/foo:~/bar`).
+ * Finds eligible tildes in assignment values and assignment-shaped arguments.
+ * A nonzero offset skips a command operand's assignment prefix in the
+ * first literal and permits a tilde immediately after the equals.
  *
- * Only a `Word`'s top-level `Lit` parts carry unquoted text; any other
- * part type (`SglQuoted`, `DblQuoted`, `ParamExp`, …) breaks adjacency —
- * whatever text or expansion it represents sits between the `:` and any
- * following `~`, so they are no longer *immediately* adjacent. `:`/`~`
- * adjacency is tracked across concatenated `Lit` parts (state carried
- * between loop iterations), since concatenation joins parts with no
- * grammar-level separator between them.
+ * Bash command arguments require an unquoted preceding colon and an unquoted
+ * prefix through the end of the word or until an unquoted slash or colon.
+ * Assignment values also allow Zsh's treatment of a backslash-escaped
+ * preceding colon and a quoted or escaped slash. Adjacent literal parts
+ * share the prefix state.
  */
-function hasUnquotedColonTilde(parts: readonly Node[]): boolean {
-  let prevWasUnescapedColon = false;
+function hasAssignmentValueTilde(
+  parts: readonly Node[],
+  firstPartOffset: number,
+  requireUnquotedPrefix: boolean,
+): boolean {
+  let followsDelimiter = firstPartOffset > 0;
+  let inTildePrefix = false;
+  let i = firstPartOffset;
   for (const part of parts) {
     if (part.Type !== "Lit") {
-      prevWasUnescapedColon = false;
+      followsDelimiter = false;
+      inTildePrefix = false;
       continue;
     }
     const raw = part.Value;
     if (typeof raw !== "string") {
       return false;
     }
-    let i = 0;
     while (i < raw.length) {
       const ch = raw[i];
       if (ch === "\\" && i + 1 < raw.length) {
-        // An escaped character (whatever it is) is never an unescaped `:`
-        // or `~`, and breaks adjacency for the purposes of this scan.
-        prevWasUnescapedColon = false;
+        followsDelimiter = !requireUnquotedPrefix && raw[i + 1] === ":";
+        inTildePrefix = false;
         i += 2;
         continue;
       }
-      if (prevWasUnescapedColon && ch === "~") {
+      if (inTildePrefix && (ch === "/" || ch === ":")) {
         return true;
       }
-      prevWasUnescapedColon = ch === ":";
+      if (followsDelimiter && ch === "~") {
+        if (!requireUnquotedPrefix) return true;
+        inTildePrefix = true;
+      }
+      followsDelimiter = ch === ":";
       i += 1;
     }
+    i = 0;
   }
-  return false;
+  return inTildePrefix;
+}
+
+/** Identifies the scalar assignment prefix represented in the leading literal. */
+function scalarAssignmentPrefix(first: Node | undefined): string | undefined {
+  if (first?.Type === "Lit" && typeof first.Value === "string") {
+    return /^[a-zA-Z_][a-zA-Z_0-9]*\+?=/.exec(first.Value)?.[0];
+  }
+  return undefined;
 }
 
 /**
@@ -242,10 +244,11 @@ function hasUnquotedBracketExpression(parts: readonly Node[]): boolean {
   return brackets.includes("]", openIndex + 1);
 }
 
-/** Applies quoting semantics to one fragment without evaluating dynamic content. */
+/** Interprets one fragment within its quoting and filename-generation context. */
 function resolvePart(
   part: Node,
-  quoting: "unquoted" | "dblquoted",
+  quoting: "unquoted" | "dblquoted" | "unknown",
+  filenameGeneration = true,
 ): PartResult {
   switch (part.Type) {
     case "TypedNil":
@@ -259,8 +262,13 @@ function resolvePart(
         return { ok: true, text: decodeDblQuotedLit(raw) };
       }
       const { text, hasGlob } = decodeUnquotedLit(raw);
-      if (hasGlob) {
+      if (filenameGeneration && hasGlob) {
         return { ok: false, reason: "glob" };
+      }
+      // A bare Lit can also come from a heredoc or quoted parameter operand,
+      // where a backslash can survive unquoting.
+      if (quoting === "unknown" && raw.includes("\\")) {
+        return { ok: false, reason: "unsupported" };
       }
       return { ok: true, text };
     }
@@ -273,11 +281,7 @@ function resolvePart(
       // v3.13.1's `syntax.SglQuoted.Dollar bool`); plain single-quoted
       // text ('...') never has any escapes interpreted at all.
       if (part.Dollar) {
-        const decoded = decodeAnsiCString(raw);
-        if (!decoded.ok) {
-          return { ok: false, reason: "unsupported" };
-        }
-        return { ok: true, text: decoded.text };
+        return decodeAnsiCString(raw);
       }
       return { ok: true, text: raw };
     }
@@ -329,16 +333,17 @@ function resolvePart(
  * Determines whether a `Word` node is statically a known string, and if
  * so, what that string is — the atom of shell-AST static analysis (e.g.
  * "is this word literally `rm`"). A word is static iff every part is a
- * literal after shell unquoting: a bare `Lit` (backslash escapes
- * processed), a `SglQuoted` (including `$'...'` ANSI-C escapes decoded),
+ * literal after shell unquoting: a bare `Lit` (backslash escapes decoded
+ * when the grammar position is known), a `SglQuoted` (including decoded
+ * `$'...'` ANSI-C escapes),
  * or a `DblQuoted` containing only literal parts (and not itself a
  * `$"..."` locale translation) — including concatenations of these (`'r'm`
  * resolves to `"rm"`). A word containing any expansion (`ParamExp`,
  * `CmdSubst`, `ArithmExp`, `ProcSubst`), a triggering unquoted `~` (see
  * `options.context`), an unquoted glob metacharacter/bracket
  * expression/`ExtGlob`, potential brace expansion, a `$"..."` locale translation,
- * or an unrepresentable ANSI-C escape has a nonstatic resolution, never a safety
- * judgment (see {@link WordResolution}). Failure to complete an observation is
+ * or a locale-dependent or unrepresentable ANSI-C escape has a nonstatic
+ * resolution (see {@link WordResolution}). Failure to complete an observation is
  * separate: host-copy resource refusal and binding failures propagate explicitly
  * rather than becoming a word-resolution result.
  *
@@ -386,23 +391,70 @@ export function resolveWord(
   if (
     first.Type === "Lit" &&
     typeof first.Value === "string" &&
-    startsWithUnescapedTilde(first.Value)
+    first.Value.startsWith("~")
   ) {
     return { static: false, reason: "tilde" };
   }
-  if (options?.context !== "command-argument" && hasUnquotedColonTilde(parts)) {
+  const context = options?.context;
+  const assignmentPrefix =
+    context === "assignment-value" ? undefined : scalarAssignmentPrefix(first);
+  if (
+    (assignmentPrefix !== undefined || context !== "command-argument") &&
+    hasAssignmentValueTilde(
+      parts,
+      assignmentPrefix?.length ?? 0,
+      context === "command-argument",
+    )
+  ) {
     return { static: false, reason: "tilde" };
   }
-  if (hasUnquotedBracketExpression(parts)) {
+  const filenameGeneration = options?.filenameGeneration !== false;
+  if (filenameGeneration && hasUnquotedBracketExpression(parts)) {
     return { static: false, reason: "glob" };
   }
+  const quoting = context === undefined ? "unknown" : "unquoted";
   let text = "";
   for (const part of parts) {
-    const result = resolvePart(part, "unquoted");
+    const result = resolvePart(part, quoting, filenameGeneration);
     if (!result.ok) {
       return { static: false, reason: result.reason };
     }
     text += result.text;
   }
   return { static: true, text };
+}
+
+/**
+ * Returns a fixed scalar assignment prefix when the operand is one shell
+ * field. Bash treats tilde replacement as quoted, and ANSI-C quotes preserve
+ * field boundaries even when a Unicode escape's encoding depends on locale.
+ * Other parts must resolve as literals, with brace and pathname expansion
+ * ruled out for the full word. Zsh glob qualifiers can remove the prefix
+ * or the entire operand.
+ *
+ * @internal
+ */
+export function singleFieldAssignmentPrefix(
+  word: Node | null | undefined,
+): string | undefined {
+  if (word?.Type !== "Word" || word.Parts?.includes(null)) return undefined;
+  const parts = nodeArray(word.Parts);
+  const prefix = scalarAssignmentPrefix(parts[0]);
+  if (
+    prefix === undefined ||
+    observeBraces(word) !== false ||
+    hasUnquotedBracketExpression(parts)
+  ) {
+    return undefined;
+  }
+  for (const part of parts) {
+    const result = resolvePart(part, "unquoted");
+    if (
+      !result.ok &&
+      !(part.Type === "SglQuoted" && part.Dollar && result.reason === "locale")
+    ) {
+      return undefined;
+    }
+  }
+  return prefix;
 }

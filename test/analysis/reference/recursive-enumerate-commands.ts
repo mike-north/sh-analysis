@@ -53,8 +53,8 @@ import type { WordResolution } from "../../../src/resolve-word.js";
  *   statement list (`role: 'body'` only — a `for` loop has no
  *   statement-list condition) or a `WhileClause`'s (`role: 'cond'` for the
  *   condition, `role: 'body'` for the loop body).
- * - `'function'` (`name`) — inside a `FuncDecl`'s body; `name` is the
- *   function's literal name text.
+ * - `'function'` (`names`) — inside a `FuncDecl`'s body, with its declared
+ *   names in source order.
  * - `'background'`/`'negated'` — the enclosing `Stmt` has mvdan/sh's
  *   Background/Negated flag set (`cmd &`, `! cmd`).
  * - `'coproc'` — inside a `CoprocClause`'s statement (a `coproc` block,
@@ -86,7 +86,7 @@ export type CommandContext =
   | { readonly kind: "if"; readonly branch: "then" | "else" | "cond" }
   | { readonly kind: "case" }
   | { readonly kind: "loop"; readonly role: "body" | "cond" }
-  | { readonly kind: "function"; readonly name: GoString }
+  | { readonly kind: "function"; readonly names: readonly GoString[] }
   | { readonly kind: "background" }
   | { readonly kind: "negated" }
   | { readonly kind: "coproc" };
@@ -105,12 +105,8 @@ export interface CommandSite {
   /** The `CallExpr` node this site was found at. */
   readonly node: CallExpr;
   /**
-   * `resolveWord` applied to the first word (`argv[0]`), with
-   * `{ context: 'command-argument' }` — every `CallExpr` word is an
-   * ordinary command-argument position, never an assignment value, so
-   * only a word-initial unquoted `~` triggers tilde expansion (an
-   * unquoted `~` after a `:`, e.g. `a:~/b`, is literal text here — see
-   * `ResolveWordOptions.context`'s doc comment).
+   * `resolveWord` applied to the first word (`argv[0]`), using
+   * `{ context: 'command-argument' }` for simple-command tilde expansion.
    */
   readonly argv0: WordResolution;
   /**
@@ -579,13 +575,14 @@ function visitCommand(
       return;
     }
     case "FuncDecl": {
-      const nameNode = cmd.Name;
-      const nameText = nameNode?.Value ?? "";
+      const names = cmd.Name
+        ? [cmd.Name.Value]
+        : nodeArray(cmd.Names).map((name) => name.Value);
       const body = cmd.Body;
       if (isSyntaxNode(body)) {
         visitStmt(
           body,
-          pushContext(context, { kind: "function", name: nameText }),
+          pushContext(context, { kind: "function", names }),
           inventory,
           depth + 1,
         );

@@ -47,8 +47,8 @@ import type { WordResolution } from "./resolve-word.js";
  *   statement list (`role: 'body'` only — a `for` loop has no
  *   statement-list condition) or a `WhileClause`'s (`role: 'cond'` for the
  *   condition, `role: 'body'` for the loop body).
- * - `'function'` (`name`) — inside a `FuncDecl`'s body; `name` is the
- *   function's literal name text.
+ * - `'function'` (`names`) — inside a `FuncDecl`'s body. The list holds
+ *   the declared names in source order and is empty for anonymous functions.
  * - `'background'`/`'negated'` — the enclosing `Stmt` has mvdan/sh's
  *   Background/Negated flag set (`cmd &`, `! cmd`).
  * - `'coproc'` — inside a `CoprocClause`'s statement (a `coproc` block,
@@ -58,15 +58,8 @@ import type { WordResolution } from "./resolve-word.js";
  * deliberately transparent — grouping and timing a command doesn't change
  * how it's reached, so no frame is added for either.
  *
- * This union may grow in a **minor** release — a future mvdan/sh grammar
- * construct this module starts modeling can add a new `kind` variant
- * without that being a breaking change (mirroring
- * {@link WordResolutionReason}'s semver policy in `resolve-word.ts`). It is
- * deliberately not sealed against extension elsewhere in the codebase.
- * Every existing variant's shape (its extra fields, if any) is stable —
- * only new variants are ever added — so an exhaustive compile-time
- * `switch` over `.kind` should still include a `default` case to stay
- * forward-compatible.
+ * A future **minor** release may add a `kind` for a newly modeled construct.
+ * Include a `default` case in a `switch` over `.kind` to handle future variants.
  *
  * @public
  */
@@ -80,7 +73,7 @@ export type CommandContext =
   | { readonly kind: "if"; readonly branch: "then" | "else" | "cond" }
   | { readonly kind: "case" }
   | { readonly kind: "loop"; readonly role: "body" | "cond" }
-  | { readonly kind: "function"; readonly name: GoString }
+  | { readonly kind: "function"; readonly names: readonly GoString[] }
   | { readonly kind: "background" }
   | { readonly kind: "negated" }
   | { readonly kind: "coproc" };
@@ -99,12 +92,8 @@ export interface CommandSite {
   /** The `CallExpr` node this site was found at. */
   readonly node: CallExpr;
   /**
-   * `resolveWord` applied to the first word (`argv[0]`), with
-   * `{ context: 'command-argument' }` — every `CallExpr` word is an
-   * ordinary command-argument position, never an assignment value, so
-   * only a word-initial unquoted `~` triggers tilde expansion (an
-   * unquoted `~` after a `:`, e.g. `a:~/b`, is literal text here — see
-   * `ResolveWordOptions.context`'s doc comment).
+   * `resolveWord` applied to the first word (`argv[0]`), using
+   * `{ context: 'command-argument' }` for simple-command tilde expansion.
    */
   readonly argv0: WordResolution;
   /**
@@ -555,9 +544,13 @@ function visitCommand(
     case "IfClause":
       visitIfClause(cmd, context, inventory, depth + 1);
       return;
-    case "CaseClause": {
-      scanForHiddenCommands(cmd.Word, context, inventory, depth);
-      for (const item of nodeArray(cmd.Items)) {
+    case "CaseClause":
+    case "CaseItem": {
+      if (cmd.Type === "CaseClause") {
+        scanForHiddenCommands(cmd.Word, context, inventory, depth);
+      }
+      const items = cmd.Type === "CaseClause" ? nodeArray(cmd.Items) : [cmd];
+      for (const item of items) {
         scanForHiddenCommands(item.Patterns, context, inventory, depth);
         visitStmtList(
           nodeArray(item.Stmts),
@@ -594,13 +587,14 @@ function visitCommand(
       return;
     }
     case "FuncDecl": {
-      const nameNode = cmd.Name;
-      const nameText = nameNode?.Value ?? "";
       const body = cmd.Body;
       if (isSyntaxNode(body)) {
+        const names = cmd.Name
+          ? [cmd.Name.Value]
+          : nodeArray(cmd.Names).map((name) => name.Value);
         visitStmt(
           body,
-          pushContext(context, { kind: "function", name: nameText }),
+          pushContext(context, { kind: "function", names }),
           inventory,
           depth + 1,
         );

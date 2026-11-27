@@ -1,12 +1,13 @@
 /**
  * Resolves command-word provenance through caller-configurable wrapper grammars.
- * Only statically known operands may be skipped; syntax facts never imply that
+ * Only operands with a known role may be skipped. Syntax facts never imply that
  * a command is safe, permitted, installed, or guaranteed to execute successfully.
  */
 import { ShAnalyzeInvalidWrapperSpecError } from "./errors.js";
 import { deepFreeze } from "./deep-freeze.js";
 import { nodeArray } from "./node-helpers.js";
 import type { CommandSite } from "./enumerate-commands.js";
+import { singleFieldAssignmentPrefix } from "./resolve-word.js";
 import type { WordResolution } from "./resolve-word.js";
 
 /**
@@ -20,12 +21,9 @@ import type { WordResolution } from "./resolve-word.js";
  * the table with their own project-specific wrappers (e.g. a `with-retry`
  * helper).
  *
- * Every flag/operand-recognizing field is checked against a word's
- * *statically resolved* text only (its `.text` on a {@link WordResolution}
- * `static: true` result) — a dynamic word can never be identified as one of
- * a wrapper's own flags or operands (see {@link resolveArgv0}'s doc comment
- * for why an unrecognizable word always ends the chain rather than being
- * guessed through).
+ * Flags are matched using statically resolved text. A wrapper's assignment
+ * grammar can also match a fixed scalar assignment prefix when the syntax
+ * guarantees one field and only its value is uncertain.
  *
  * This shape may grow new optional fields in a **minor** release as this
  * analyzer models more wrapper flag conventions; existing fields' meaning
@@ -80,7 +78,7 @@ export interface WrapperSpec {
 
   /**
    * Assignment-operand scanning grammar, independent of the wrapper's name.
-   * Each preset defines both which static words are assignments and where
+   * Each preset defines both which words are assignments and where
    * option scanning stops; it does not model the utility's other options.
    *
    * - `'shell-identifier'`: the ASCII `NAME=value` rule before `--`;
@@ -717,11 +715,10 @@ export interface Argv0Resolution {
    * command, or, if resolution hit a statically-unknowable word anywhere
    * along the chain (an expansion, a glob, an unrecognized flag, an
    * embedded-command operand, …), that unknowable result itself.
-   * **A `static: false` word is never guessed through**: the moment one is
+   * A `static: false` word of unknown role stops the chain. When one is
    * reached (whether at argv0, several wrappers deep, or synthesized by
    * `resolveArgv0` itself for an unrecognized flag), it becomes
-   * `effective` and the chain stops — this is the security-relevant
-   * guarantee that makes `sudo -u x "$prog"` report an unknowable
+   * `effective`. This makes `sudo -u x "$prog"` report an unknowable
    * effective command rather than silently treating `sudo` itself as the
    * answer, and makes `sudo -D /tmp rm x` (an unrecognized `sudo` flag)
    * report `'unknown-flag'` rather than misreporting `rm` — or, worse,
@@ -927,10 +924,11 @@ type AdvanceResult =
  * assignments only before `--` and allow later options.
  */
 function advancePastWrapperOperands(
-  argv: readonly WordResolution[],
+  site: CommandSite,
   startIndex: number,
   spec: WrapperSpec,
 ): AdvanceResult {
+  const { argv } = site;
   let index = startIndex;
   let positionalSeen = 0;
   let optionsEnded = false;
@@ -939,14 +937,16 @@ function advancePastWrapperOperands(
   while (index < argv.length) {
     // `index < argv.length` just checked above, so this is a real element.
     const word = argv[index];
-    if (!word.static) {
-      // Can't be identified as this wrapper's own flag/operand text at
-      // all — never guessed through, so this word itself is the next
-      // chain element (the caller's loop will see it's unresolvable and
-      // stop there via `WordResolution`'s own `static: false`).
+    const text = word.static
+      ? word.text
+      : assignmentGrammar !== undefined &&
+          (assignmentGrammar === "env" || !optionsEnded) &&
+          (word.reason === "tilde" || word.reason === "locale")
+        ? singleFieldAssignmentPrefix(site.node.Args?.[index])
+        : undefined;
+    if (text === undefined) {
       return { kind: "next", index };
     }
-    const text = word.text;
     if (!optionsEnded && text === "--") {
       optionsEnded = true;
       index += 1;
@@ -983,6 +983,8 @@ function advancePastWrapperOperands(
       index += 1;
       continue;
     }
+    // A fixed prefix can establish an assignment, but cannot identify a flag or command.
+    if (!word.static) return { kind: "next", index };
     if (!optionsEnded) {
       if (
         spec.unresolvableFlags !== undefined &&
@@ -1437,7 +1439,8 @@ function validateInterpreterSpec(
  * command) or add their own (e.g. a project's `with-retry` helper) and
  * both directions are followed identically to any built-in entry.
  *
- * **A statically-unknowable word is never guessed through** — four
+ * Wrappers can skip an assignment with a fixed scalar prefix when its syntax
+ * guarantees one field even though its value is uncertain. Otherwise, four
  * distinct cases all stop the chain immediately at that word rather than
  * falling back to any other guess:
  *
@@ -1583,7 +1586,7 @@ export function resolveArgv0(
       }
       break;
     }
-    const result = advancePastWrapperOperands(argv, index + 1, spec);
+    const result = advancePastWrapperOperands(site, index + 1, spec);
     if (result.kind === "truncated") {
       break;
     }

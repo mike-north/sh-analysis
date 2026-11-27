@@ -4,7 +4,7 @@
 
 ## ResolveWordOptions interface
 
-Options controlling [resolveWord()](./sh-analysis.resolveword.md)<!-- -->'s tilde-expansion detection.
+Options controlling expansion detection and escape decoding in [resolveWord()](./sh-analysis.resolveword.md)<!-- -->.
 
 **Signature:**
 
@@ -45,11 +45,32 @@ Description
 
 </td><td>
 
-_(Optional)_ Which Bash grammar position `word` occupies — the two positions Bash §3.5.2 ("Tilde Expansion") documents distinct tilde-expansion triggers for:
+_(Optional)_ Which grammar position `word` occupies. Both positions allow tilde expansion at the start of the word.
 
-- `'command-argument'` — an ordinary simple-command argument word (e.g. `echo <word>`<!-- -->). Only a \*word-initial\* unquoted `~` triggers tilde expansion; an unquoted `~` elsewhere in the word (including right after a `:`<!-- -->) is an ordinary character (`echo a:~b` prints `a:~b` literally in real bash). - `'assignment-value'` — the value side of a shell assignment (e.g. `PATH=<word>`<!-- -->, an `Assign` node's `value`<!-- -->). Bash additionally tilde-expands an unquoted `~` immediately following an unquoted `:` anywhere in the value (`PATH=/foo:~/bar` expands the `~/bar` segment) — this is documented for `PATH`<!-- -->-like colon-separated assignment values specifically.
+- `'command-argument'` — a simple-command word. In normal Bash mode, assignment-shaped arguments such as `ARG=~/x` and `ARG=a:~/x` can expand an unquoted tilde after the assignment operator or a colon in the value. Ordinary arguments such as `a:~/x` keep that tilde literal. - `'assignment-value'` — the value side of a shell assignment (e.g. the `/foo:~/bar` in `PATH=/foo:~/bar`<!-- -->). Bash additionally expands an unquoted tilde immediately following an unquoted colon in the value. Zsh can also expand a tilde after a backslash-escaped colon or before a quoted or escaped slash. This context accounts for both shells.
 
-\*\*Default: `'assignment-value'` semantics apply whenever this option is omitted.\*\* `resolveWord` takes a bare `Word` node with no grammar context attached, so it cannot see whether its caller extracted that word from a command argument or an assignment value — omitting this option is deliberately treated as the \*more conservative\* of the two (the one that reports `'tilde'` in more cases), so a caller that doesn't know or care about the distinction never under-reports a real tilde-expansion site. Pass `'command-argument'` explicitly to opt into the narrower, word-initial-only check that matches real bash's behavior for ordinary arguments.
+Both positions also establish the escape rules for top-level `Lit` parts. With the option omitted, either position can trigger a tilde result, and a top-level literal with a backslash can report `'unsupported'` because the enclosing escape rules are unknown.
+
+</td></tr>
+<tr><td>
+
+[filenameGeneration?](./sh-analysis.resolvewordoptions.filenamegeneration.md)
+
+</td><td>
+
+`readonly`
+
+</td><td>
+
+boolean
+
+</td><td>
+
+_(Optional)_ Whether to check literal text for filename generation. Defaults to `true`<!-- -->, which covers possible Zsh pattern groups and glob qualifiers even when the word's position is unknown.
+
+Set to `false` when the enclosing syntax suppresses filename generation, as with heredoc bodies and heredoc delimiters. Escape decoding is independent of this option. Represented expansions still produce uncertainty.
+
+An operand detached from inside a double-quoted parameter expansion loses the enclosing quoting context. Resolving the detached operand can produce text that differs from the shell's output. Pass the enclosing word to observe the parameter expansion.
 
 </td></tr>
 </tbody></table>

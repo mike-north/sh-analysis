@@ -77,7 +77,9 @@ describe("upstream-backed brace classification", () => {
   ])(
     "keeps quoted, escaped, malformed or non-expanding %s static",
     (source, text) => {
-      expect(resolveWord(argument(source))).toEqual({ static: true, text });
+      expect(
+        resolveWord(argument(source), { context: "command-argument" }),
+      ).toEqual({ static: true, text });
     },
   );
 
@@ -100,7 +102,11 @@ describe("upstream-backed brace classification", () => {
     );
     const call = vi.mocked(syntax.splitBraces);
     call.mockClear();
-    for (const word of words) expect(resolveWord(word).static).toBe(true);
+    for (const word of words) {
+      expect(resolveWord(word, { context: "command-argument" }).static).toBe(
+        true,
+      );
+    }
     expect(call).not.toHaveBeenCalled();
   });
 
@@ -217,7 +223,9 @@ describe("upstream-backed brace classification", () => {
   ])(
     "keeps ordinary parsed escapes local to their literal record: %s",
     (source, text) => {
-      expect(resolveWord(argument(source))).toEqual({ static: true, text });
+      expect(
+        resolveWord(argument(source), { context: "command-argument" }),
+      ).toEqual({ static: true, text });
     },
   );
 
@@ -252,7 +260,10 @@ describe("upstream-backed brace classification", () => {
       ]) {
         const word: Word = { Type: "Word", Parts };
         const before = structuredClone(word);
-        expect(resolveWord(word)).toEqual({ static: false, reason: "brace" });
+        expect(resolveWord(word, { context: "command-argument" })).toEqual({
+          static: false,
+          reason: "brace",
+        });
         expect(word).toEqual(before);
       }
     },

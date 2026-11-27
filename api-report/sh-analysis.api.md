@@ -57,7 +57,7 @@ export type CommandContext = {
     readonly role: "body" | "cond";
 } | {
     readonly kind: "function";
-    readonly name: GoString;
+    readonly names: readonly GoString[];
 } | {
     readonly kind: "background";
 } | {
@@ -124,6 +124,7 @@ export function resolveWord(word: Node_2, options?: ResolveWordOptions): WordRes
 // @public
 export interface ResolveWordOptions {
     readonly context?: "command-argument" | "assignment-value";
+    readonly filenameGeneration?: boolean;
 }
 
 // @public

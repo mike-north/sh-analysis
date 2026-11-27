@@ -23,7 +23,7 @@ import { resolveWord } from "../../src/index.js";
 import type { WordResolution } from "../../src/index.js";
 import { parseSync } from "sh-ast";
 import type { Word, WordPart } from "sh-ast";
-import { LangBash } from "sh-ast";
+import { LangBash, LangZsh } from "sh-ast";
 import { syntheticNode } from "./analyze-fixtures.js";
 
 const sh = String.raw;
@@ -64,7 +64,9 @@ function argWord(wordSrc: string, dialect: number = LangBash): Word {
 }
 
 function resolve(wordSrc: string, dialect?: number): WordResolution {
-  return resolveWord(argWord(wordSrc, dialect));
+  return resolveWord(argWord(wordSrc, dialect), {
+    context: "command-argument",
+  });
 }
 
 /**
@@ -182,16 +184,11 @@ describe("resolveWord — criterion 1: positive (static) resolution table", () =
     // \uHHHH: Unicode code point, one to four hex digits. U+0041 = 'A'.
     { label: '$\\u0041 (Unicode BMP -> "A")', src: sh`$'\u0041'`, text: "A" },
     // \UHHHHHHHH: Unicode code point, one to eight hex digits.
-    // U+00000041 = 'A'; U+0001F389 = 🎉 (PARTY POPPER, astral plane).
+    // U+00000041 is ASCII 'A'.
     {
       label: '$\\U00000041 (Unicode, 8 digits -> "A")',
       src: sh`$'\U00000041'`,
       text: "A",
-    },
-    {
-      label: "$\\U0001F389 (Unicode astral code point -> emoji)",
-      src: sh`$'\U0001F389'`,
-      text: "\u{1F389}",
     },
     // \cx: control-x character. \cA = 0x41 ('A') XOR 0x40 = 0x01.
     { label: "$\\cA (control character)", src: sh`$'\cA'`, text: "\x01" },
@@ -248,15 +245,11 @@ describe("resolveWord — regression: out-of-range $'\\U...' ANSI-C code point m
     });
   });
 
-  it("still decodes the in-range boundary $'\\U0010FFFF' (the highest valid code point)", () => {
+  it("reports the highest Unicode scalar $'\\U0010FFFF' as locale-dependent", () => {
     expect(resolve(sh`$'\U0010FFFF'`)).toEqual({
-      static: true,
-      text: "\u{10ffff}",
+      static: false,
+      reason: "locale",
     });
-  });
-
-  it("still decodes $'\\U0001F389' (in-range astral code point, already in the positive table) correctly", () => {
-    expect(resolve(sh`$'\U0001F389'`)).toEqual({ static: true, text: "🎉" });
   });
 
   // U+D800 is not a Unicode scalar; the dedicated native-byte suite proves
@@ -504,6 +497,19 @@ describe("resolveWord — options.context: assignment-value colon-tilde expansio
     });
   });
 
+  it.each(['A=é:~"/x"', sh`A=é:~\/x`])(
+    "keeps a Zsh assignment value with a quoted or escaped tilde delimiter uncertain (%s)",
+    (source) => {
+      // Zsh 5.9 produces é:/first/x or é:/second/x as HOME changes.
+      const word = assignValueWord(source, LangZsh);
+      const expected = { static: false, reason: "tilde" };
+      expect(resolveWord(word, { context: "assignment-value" })).toEqual(
+        expected,
+      );
+      expect(resolveWord(word)).toEqual(expected);
+    },
+  );
+
   it("an assignment value with no colon-adjacent tilde stays static regardless of context", () => {
     const word = assignValueWord("PATH=/foo/bar");
     expect(resolveWord(word)).toEqual({ static: true, text: "/foo/bar" });
@@ -513,14 +519,25 @@ describe("resolveWord — options.context: assignment-value colon-tilde expansio
     });
   });
 
+  it("detects a tilde after an assignment-shaped operand's equals with no context", () => {
+    expect(resolveWord(argWord("ARG=~/x"))).toEqual({
+      static: false,
+      reason: "tilde",
+    });
+  });
+
+  it("keeps an embedded equals-tilde literal in an explicit assignment value", () => {
+    expect(
+      resolveWord(assignValueWord("WRAPPED=ARG=~/x"), {
+        context: "assignment-value",
+      }),
+    ).toEqual({ static: true, text: "ARG=~/x" });
+  });
+
   // `echo a:~b`'s argument word is *not* an assignment — real bash leaves
   // it entirely literal (verified: `bash -c 'echo a:~b'` prints `a:~b`).
-  // resolveWord can't see that grammatical context from a bare Word node,
-  // so its documented conservative default (omitted options) still reports
-  // "tilde" here — this is the one place in this suite where the
-  // conservative default's result differs from real bash's behavior for
-  // that word's actual grammatical position, by design (see
-  // `ResolveWordOptions.context`'s doc comment).
+  // Without context the resolver also accounts for assignment-value
+  // semantics, so it reports a possible tilde expansion here.
   it('an ordinary command-argument word with a colon-adjacent tilde reports "tilde" when no context is given (conservative default)', () => {
     const word = argWord("a:~b");
     expect(resolveWord(word)).toEqual({ static: false, reason: "tilde" });
@@ -542,16 +559,197 @@ describe("resolveWord — options.context: assignment-value colon-tilde expansio
     });
   });
 
-  it("an escaped colon does not enable colon-adjacent tilde expansion", () => {
-    // `a\:~b`: the backslash escapes the colon, so it is not the unquoted
-    // `:` §3.5.2 requires immediately before the triggering `~`.
-    const word = argWord(sh`a\:~b`);
-    expect(resolveWord(word)).toEqual({ static: true, text: "a:~b" });
+  it("reports tilde uncertainty after an escaped colon in a Zsh assignment value", () => {
+    // Zsh 5.9 expands `A=a\:~/x` to `a:/first/x` or `a:/second/x` as HOME changes.
+    const word = assignValueWord(sh`A=a\:~/x`, LangZsh);
+    const expected = { static: false, reason: "tilde" };
+    expect(resolveWord(word, { context: "assignment-value" })).toEqual(
+      expected,
+    );
+    expect(resolveWord(word)).toEqual(expected);
+  });
+
+  it("keeps a tilde after an escaped colon literal in a Bash assignment-shaped argument", () => {
+    const word = argWord(sh`A=a\:~/x`);
+    expect(resolveWord(word, { context: "command-argument" })).toEqual({
+      static: true,
+      text: "A=a:~/x",
+    });
   });
 
   it("an escaped tilde after an unquoted colon does not trigger tilde expansion", () => {
-    const word = argWord(sh`a:\~b`);
-    expect(resolveWord(word)).toEqual({ static: true, text: "a:~b" });
+    const word = assignValueWord(sh`A=a:\~b`);
+    expect(resolveWord(word, { context: "assignment-value" })).toEqual({
+      static: true,
+      text: "a:~b",
+    });
+  });
+});
+
+describe("resolveWord — possible Zsh globbing without a context", () => {
+  const zsh = { Variant: LangZsh };
+  const glob = { static: false, reason: "glob" };
+
+  it("reports glob uncertainty for a Zsh command argument with a qualifier", () => {
+    const word = commandArgs(sh`printf '%s\n' é-one.txt(N) END`, LangZsh)[2];
+    expect(resolveWord(word)).toEqual(glob);
+  });
+
+  it("reports glob uncertainty for a Zsh redirection target", () => {
+    const file = parseSync("cat <é-(one|two).txt", zsh);
+    const word = assertDefined(
+      file.Stmts?.[0]?.Redirs?.[0]?.Word,
+      "missing redirection target",
+    );
+    expect(resolveWord(word)).toEqual(glob);
+  });
+
+  it("reports glob uncertainty for a Zsh for-loop item", () => {
+    const file = parseSync(
+      sh`for f in é-(one|two).txt(N); do printf '%s\n' "$f"; done`,
+      zsh,
+    );
+    const cmd = file.Stmts?.[0]?.Cmd;
+    if (cmd?.Type !== "ForClause" || cmd.Loop?.Type !== "WordIter") {
+      throw new Error("missing for-loop word list");
+    }
+    const word = assertDefined(cmd.Loop.Items?.[0], "missing for-loop item");
+    expect(resolveWord(word)).toEqual(glob);
+  });
+
+  it("reports glob uncertainty for a Zsh array element", () => {
+    const file = parseSync("arr=(é-(one|two).txt(N))", zsh);
+    const cmd = file.Stmts?.[0]?.Cmd;
+    if (cmd?.Type !== "CallExpr") throw new Error("missing array assignment");
+    const word = assertDefined(
+      cmd.Assigns?.[0]?.Array?.Elems?.[0]?.Value,
+      "missing array element",
+    );
+    expect(resolveWord(word)).toEqual(glob);
+  });
+
+  it("reports glob uncertainty for an unquoted Zsh parameter default", () => {
+    const argument = argWord("${V:-é-one.txt(N)}", LangZsh);
+    const expansion = argument.Parts?.[0];
+    if (expansion?.Type !== "ParamExp")
+      throw new Error("missing parameter expansion");
+    const word = assertDefined(expansion.Exp?.Word, "missing default operand");
+    expect(resolveWord(word)).toEqual(glob);
+  });
+});
+
+describe("resolveWord — literal parentheses with filename generation suppressed", () => {
+  it("keeps literal parentheses in an expanding heredoc body", () => {
+    const file = parseSync("cat <<EOF\né(paren)\nEOF\n");
+    const hdoc = assertDefined(
+      file.Stmts?.[0]?.Redirs?.[0]?.Hdoc,
+      "missing heredoc body",
+    );
+    expect(resolveWord(hdoc, { filenameGeneration: false })).toEqual({
+      static: true,
+      text: "é(paren)\n",
+    });
+  });
+
+  it("keeps literal parentheses in a Zsh heredoc delimiter", () => {
+    const file = parseSync("cat <<E(OF)\nplain\nE(OF)\n", {
+      Variant: LangZsh,
+    });
+    const delimiter = assertDefined(
+      file.Stmts?.[0]?.Redirs?.[0]?.Word,
+      "missing heredoc delimiter",
+    );
+    expect(resolveWord(delimiter, { filenameGeneration: false })).toEqual({
+      static: true,
+      text: "E(OF)",
+    });
+  });
+
+  it("keeps literal parentheses in a parameter expansion default operand", () => {
+    const value = assignValueWord('A="${V:-é(paren)}"');
+    const quoted = value.Parts?.[0];
+    if (quoted?.Type !== "DblQuoted") throw new Error("missing quoted value");
+    const expansion = quoted.Parts?.[0];
+    if (expansion?.Type !== "ParamExp")
+      throw new Error("missing parameter expansion");
+    const operand = assertDefined(
+      expansion.Exp?.Word,
+      "missing default operand",
+    );
+    expect(resolveWord(operand, { filenameGeneration: false })).toEqual({
+      static: true,
+      text: "é(paren)",
+    });
+  });
+
+  it("uses explicit filename generation context for a Zsh here-string", () => {
+    const file = parseSync("cat <<<é-one.txt(N)", { Variant: LangZsh });
+    const word = assertDefined(
+      file.Stmts?.[0]?.Redirs?.[0]?.Word,
+      "missing here-string word",
+    );
+    expect(resolveWord(word)).toEqual({ static: false, reason: "glob" });
+    expect(resolveWord(word, { filenameGeneration: false })).toEqual({
+      static: true,
+      text: "é-one.txt(N)",
+    });
+  });
+});
+
+describe("resolveWord — escapes in detached words", () => {
+  it("reports escape uncertainty for a detached heredoc body with globbing disabled", () => {
+    const file = parseSync("cat <<EOF\né\\q*(paren)\nEOF\n");
+    const body = assertDefined(
+      file.Stmts?.[0]?.Redirs?.[0]?.Hdoc,
+      "missing heredoc body",
+    );
+    // An expanding heredoc preserves the backslash in `\q`.
+    expect(resolveWord(body)).toEqual({ static: false, reason: "glob" });
+    expect(resolveWord(body, { filenameGeneration: false })).toEqual({
+      static: false,
+      reason: "unsupported",
+    });
+  });
+
+  it("reports escape uncertainty for a detached double-quoted parameter default", () => {
+    const value = assignValueWord('A="${V:-é\\q*(paren)}"');
+    const quoted = value.Parts?.[0];
+    if (quoted?.Type !== "DblQuoted") throw new Error("missing quoted value");
+    const expansion = quoted.Parts?.[0];
+    if (expansion?.Type !== "ParamExp")
+      throw new Error("missing parameter expansion");
+    const operand = assertDefined(
+      expansion.Exp?.Word,
+      "missing default operand",
+    );
+    // The double-quoted default preserves the backslash in `\q`.
+    expect(resolveWord(operand, { filenameGeneration: false })).toEqual({
+      static: false,
+      reason: "unsupported",
+    });
+  });
+
+  it("reports escape uncertainty for a detached heredoc body without glob metacharacters", () => {
+    const file = parseSync("cat <<EOF\né\\q\nEOF\n");
+    const body = assertDefined(
+      file.Stmts?.[0]?.Redirs?.[0]?.Hdoc,
+      "missing heredoc body",
+    );
+    const uncertain = { static: false, reason: "unsupported" };
+    expect(resolveWord(body)).toEqual(uncertain);
+    expect(resolveWord(body, { filenameGeneration: false })).toEqual(uncertain);
+  });
+
+  it("decodes escapes in a known command argument independently of filename generation", () => {
+    const word = argWord(sh`é\q`);
+    const exact = { static: true, text: "éq" };
+    expect(resolveWord(word, { context: "command-argument" })).toEqual(exact);
+    expect(
+      resolveWord(word, {
+        context: "command-argument",
+        filenameGeneration: false,
+      }),
+    ).toEqual(exact);
   });
 });
 
@@ -583,8 +781,8 @@ describe("resolveWord — criterion 3: multibyte fidelity", () => {
     });
   });
 
-  it("resolves an emoji decoded from a $'\\U...' ANSI-C escape to the exact character", () => {
-    expect(resolve(sh`$'\U0001F389'`)).toEqual({ static: true, text: "🎉" });
+  it("preserves literal multibyte text in an ANSI-C quoted word", () => {
+    expect(resolve(sh`$'🎉'`)).toEqual({ static: true, text: "🎉" });
   });
 });
 
