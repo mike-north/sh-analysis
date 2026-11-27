@@ -1,5 +1,21 @@
 # sh-analysis
 
+## 0.3.0
+
+### Minor Changes
+
+- [#21](https://github.com/mike-north/sh-analysis/pull/21) [`596bda9`](https://github.com/mike-north/sh-analysis/commit/596bda9ed17189cce392b3bb58b95928297b78f3) Thanks [@mike-north-bot](https://github.com/mike-north-bot)! - Add `ResolveWordOptions.filenameGeneration` for words whose enclosing syntax suppresses filename generation.
+
+- [#21](https://github.com/mike-north/sh-analysis/pull/21) [`f89241d`](https://github.com/mike-north/sh-analysis/commit/f89241d18f0c396c4999120f64488014b16c7dc8) Thanks [@mike-north-bot](https://github.com/mike-north-bot)! - **Breaking API change.** Function context frames expose `names` in place of `name`. Replace reads of `frame.name` with `frame.names`. Read the first entry when you expect a single declared name, or check every entry when matching a name. The array preserves declaration order and is empty for anonymous functions.
+
+### Patch Changes
+
+- [#21](https://github.com/mike-north/sh-analysis/pull/21) [`f89241d`](https://github.com/mike-north/sh-analysis/commit/f89241d18f0c396c4999120f64488014b16c7dc8) Thanks [@mike-north-bot](https://github.com/mike-north-bot)! - Include commands from case-arm subtrees, detect tilde expansion in assignment-shaped arguments, and report locale uncertainty for non-ASCII ANSI-C Unicode escapes.
+
+  Honor Bash quoting within tilde prefixes in assignment-shaped command arguments. Report possible Zsh tilde expansion in assignment values after a backslash-escaped colon or before a quoted or escaped slash. Preserve wrapper command resolution when an assignment is known to occupy one field. Report glob uncertainty for possible Zsh pattern groups and qualifiers when filename generation is possible.
+
+  Report uncertainty for detached word literals whose backslash escapes depend on their enclosing syntax. Pass `context` for a known command argument or assignment value to resolve its escapes. The `filenameGeneration` option controls only literal glob detection.
+
 ## 0.2.0
 
 ### Minor Changes
